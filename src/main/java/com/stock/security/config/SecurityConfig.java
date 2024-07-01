@@ -168,7 +168,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain registerPublicSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
         return httpSecurity
-                .securityMatcher(new AntPathRequestMatcher("/api/free-buy-list"))
+                .securityMatcher(new AntPathRequestMatcher("/free/free-buy-list"))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

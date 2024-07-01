@@ -22,10 +22,6 @@ import com.stock.services.SymbolService;
 public class OptimizerController {
 	
 //	private static Logger log = LogManager.getLogger(OptimizerController.class);
-	
-  private static final String template = "Hello, %s!";
-  private final AtomicLong counter = new AtomicLong();
-  
   @Autowired
   SymbolService symbolService;
  
@@ -34,17 +30,5 @@ public class OptimizerController {
   public @ResponseBody List<SymbolStatus> getRecommendedBuySymbols() {
     return symbolService.getRecomendedBuySymbols();
   }
-  
-  
-  @GetMapping("/free-buy-list")
-  public @ResponseBody List<SymbolStatus> getFreeRecommendedBuySymbols() {
-    return symbolService.getRecomendedBuySymbols();
-  }
-  
-   @GetMapping("/greeting")
-  public Greeting greeting(
-      @RequestParam(value = "name", defaultValue = "World") final String name) {
-    return new Greeting(counter.incrementAndGet(),
-        String.format(OptimizerController.template, name));
-  }
+
 }
