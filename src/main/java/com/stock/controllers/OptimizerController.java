@@ -17,7 +17,9 @@ import com.stock.model.SymbolStatus;
 import com.stock.services.SymbolService;
 
 @RestController
-@CrossOrigin("*")
+//@CrossOrigin("*")
+//@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "http://localhost:5003")
 @RequestMapping("/api")
 public class OptimizerController {
 	
@@ -25,7 +27,7 @@ public class OptimizerController {
   @Autowired
   SymbolService symbolService;
  
-  
+//  @CrossOrigin(origins = "http://localhost:5003")
   @GetMapping("/buy-list")
   public @ResponseBody List<SymbolStatus> getRecommendedBuySymbols() {
     return symbolService.getRecomendedBuySymbols();
