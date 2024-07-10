@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -32,7 +33,7 @@ public class AuthController {
 
     private final AuthService authService;
     
-    @PostMapping("/sign-in")
+    @GetMapping("/sign-in")
     public ResponseEntity<?> authenticateUser(Authentication authentication, HttpServletResponse response){
         return ResponseEntity.ok(authService.getJwtTokensAfterAuthentication(authentication, response));
     }

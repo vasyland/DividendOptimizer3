@@ -17,6 +17,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  security:
+    cors: http://localhost:5003 
 
 logging:
   level:
