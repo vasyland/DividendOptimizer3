@@ -67,7 +67,7 @@ public class SecurityConfig {
     public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
         return httpSecurity
         		.csrf(AbstractHttpConfigurer::disable)
-                .securityMatcher("/sign-in/**")
+                .securityMatcher("/login/**")
                 .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
                 .userDetailsService(userInfoManagerConfig)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

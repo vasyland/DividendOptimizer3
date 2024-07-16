@@ -18,9 +18,10 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOriginPattern(this.cors);  //"http://localhost:5003"
-//        config.addAllowedOriginPattern("*");
+//        config.addAllowedOriginPattern(this.cors);  //"http://localhost:5003"
+        config.addAllowedOriginPattern("http://localhost:5003");
         config.addAllowedHeader("*");
+//        config.addAllowedHeader("Access-Control-Allow-Headers","content-type,authorization");
         config.addAllowedMethod("*");
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
