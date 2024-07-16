@@ -33,7 +33,7 @@ public class AuthController {
 
     private final AuthService authService;
     
-    @GetMapping("/sign-in")
+    @GetMapping("/login")
     public ResponseEntity<?> authenticateUser(Authentication authentication, HttpServletResponse response){
         return ResponseEntity.ok(authService.getJwtTokensAfterAuthentication(authentication, response));
     }

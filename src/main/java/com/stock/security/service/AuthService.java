@@ -45,8 +45,12 @@ public class AuthService {
                         log.error("[AuthService:userSignInAuth] User :{} not found",authentication.getName());
                         return new ResponseStatusException(HttpStatus.NOT_FOUND,"USER NOT FOUND ");});
 
+        	log.info("#10 USER EMAIL: " + userInfoEntity.getEmailId());
+        	log.info("#20 USER PASSWORD: " + userInfoEntity.getPassword());
+        	
+        	
             String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
-            String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
+            String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication) + "AAA";
 
             //Let's save the refreshToken as well
             saveUserRefreshToken(userInfoEntity, refreshToken);
@@ -92,14 +96,11 @@ public class AuthService {
 	 * @return can be void
 	 */
 	private Cookie creatRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        
 		Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
-        
 		refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setMaxAge(15 * 24 * 60 * 60 ); // in seconds
         response.addCookie(refreshTokenCookie);
-        
         return refreshTokenCookie;
     }
 	

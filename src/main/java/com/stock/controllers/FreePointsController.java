@@ -16,7 +16,7 @@ import com.stock.services.SymbolService;
 
 @RestController
 //@CrossOrigin("*")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 //@CrossOrigin(origins = "http://localhost:5003")
 @RequestMapping("/free")
 public class FreePointsController {
