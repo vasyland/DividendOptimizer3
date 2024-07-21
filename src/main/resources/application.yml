@@ -1,5 +1,11 @@
 server:
-  port: 8095
+  port: 8081
+  ssl:
+    enabled: true
+    key-store: classpath:certificates/divoptimizer3.jks
+    key-store-password: changeit
+    key-store-type: PKCS12
+    key-alias: divoptimizer3_key
 
 spring:
   application:
@@ -18,7 +24,7 @@ spring:
       hibernate:
         format_sql: true
   security:
-    cors: http://localhost:5003 
+    cors: https://localhost:5003 
 
 logging:
   level:

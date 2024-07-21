@@ -15,6 +15,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuthResponseDto {
+	
+	@JsonProperty("id")
+	private Long id;
 
     @JsonProperty("access_token")
     private String accessToken;
@@ -28,5 +31,9 @@ public class AuthResponseDto {
     @JsonProperty("user_name")
     private String userName;
     
-  
+//    @JsonProperty("refresh_token")
+//    private String refreshToken;
+//    
+//    @JsonProperty("refresh_token_expiry")
+//    private int refreshTokenExpiry;
 }
