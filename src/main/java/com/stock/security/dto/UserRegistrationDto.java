@@ -7,8 +7,10 @@ import jakarta.validation.constraints.NotEmpty;
  * @author atquil
  */
 public record UserRegistrationDto (
+		
         @NotEmpty(message = "User Name must not be empty")
         String userName,
+        
         String userMobileNo,
         
         @NotEmpty(message = "User email must not be empty") //Neither null nor 0 size

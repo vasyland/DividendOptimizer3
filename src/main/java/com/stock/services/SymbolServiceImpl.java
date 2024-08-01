@@ -28,7 +28,6 @@ public class SymbolServiceImpl implements SymbolService {
 
 	@Override
 	public List<SymbolStatus> getRecomendedBuySymbols() {
-		return symbolStatusRepository.getSymbolsByRecommendedAction("Buy");
+		return symbolStatusRepository.getSymbolsByRecommendedAction("Sell");
 	}
-	
 }

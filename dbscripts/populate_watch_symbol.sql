@@ -55,7 +55,7 @@ INSERT INTO `watch_symbol` (`symbol`, `quoterly_dividend_amount`, `upper_yield`,
 VALUES ('KEY.TO', '0.48', '6.75', '5.94', '2023-07-02');
 
 INSERT INTO `watch_symbol` (`symbol`, `quoterly_dividend_amount`, `upper_yield`, `lower_yield`, `updated_on`) 
-VALUES ('EMA.TO', '0.69', '5.2', '4.68', '2023-07-02');
+VALUES ('EMA.TO', '0.718', '5.2', '4.68', '2023-07-02');
 
 INSERT INTO `watch_symbol` (`symbol`, `quoterly_dividend_amount`, `upper_yield`, `lower_yield`, `updated_on`) 
 VALUES ('CCA.TO', '0.776', '5.09', '5.09', '2023-07-02');

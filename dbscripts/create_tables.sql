@@ -55,3 +55,32 @@ CREATE TABLE `action` (
   CONSTRAINT `fk_action_scenario1` FOREIGN KEY (`scenario_id`) REFERENCES `scenario` (`id`)
 ) ENGINE=InnoDB;
 
+
+======================== NYSE ==========================================
+CREATE TABLE `us_watch_symbol` (
+  `symbol` varchar(10) NOT NULL COMMENT 'Stock symbol TSX with .TO',
+  `quoterly_dividend_amount` decimal(10,4) DEFAULT NULL COMMENT 'Majority ov comapnies pay on quaterly basis',
+  `upper_yield` decimal(6,4) DEFAULT NULL COMMENT 'Upper yeild where price is at lowest point',
+  `lower_yield` decimal(6,4) DEFAULT NULL COMMENT 'Lowe yield when price is at highest point',
+  `updated_on` datetime(6) DEFAULT NULL COMMENT 'Date when record was created or updated',
+  PRIMARY KEY (`symbol`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+====== Volatility Dates ================================================
+create table volatility_date (
+	`id` bigint NOT NULL AUTO_INCREMENT,
+    `day_date` datetime DEFAULT CURRENT_TIMESTAMP,
+    `action_description` VARCHAR(450) NULL,
+    `description` VARCHAR(450) NULL,
+    `active` INT NULL,  /*  0 - not active, 1 - active */
+    `active_from_date` datetime NULL,
+    `active_to_date` datetime NULL,
+    `created_on` datetime DEFAULT CURRENT_TIMESTAMP,
+    `updated_on` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `UKvolatilitydate` (`day_date`)
+) engine=InnoDB;
+
+CREATE TABLE `volatility_date_seq` (
+  `next_val` bigint DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

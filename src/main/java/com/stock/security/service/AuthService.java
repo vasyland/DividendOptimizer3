@@ -174,7 +174,7 @@ public class AuthService {
 
 				Optional<UserInfoEntity> user = userInfoRepo.findByEmailId(userRegistrationDto.userEmail());
 				if (user.isPresent()) {
-					throw new Exception("User Already Exist");
+					throw new Exception("User already exists");
 				}
 
 				UserInfoEntity userDetailsEntity = userInfoMapper.convertToEntity(userRegistrationDto);
