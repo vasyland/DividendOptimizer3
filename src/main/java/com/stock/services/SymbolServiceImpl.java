@@ -1,5 +1,6 @@
 package com.stock.services;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -28,7 +29,8 @@ public class SymbolServiceImpl implements SymbolService {
 
 	@Override
 	public List<SymbolStatus> getRecomendedBuySymbols() {
-		return symbolStatusRepository.getSymbolsByRecommendedAction("Buy");
+		
+		List<String> actions = Arrays.asList(new String[]{"Buy","Hold"});
+		return symbolStatusRepository.getSymbolsByRecommendedAction(actions);
 	}
-	
 }

@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,6 +11,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.stock.model.SymbolStatus;
+import com.stock.model.VolatilityDay;
+import com.stock.services.FeatureService;
 import com.stock.services.SymbolService;
 
 @RestController
@@ -26,12 +27,20 @@ public class FreePointsController {
 
 	@Autowired
 	SymbolService symbolService;
+	@Autowired
+	FeatureService featureService;
 
 	@GetMapping("/free-buy-list")
 	public @ResponseBody List<SymbolStatus> getFreeRecommendedBuySymbols() {
 		return symbolService.getRecomendedBuySymbols();
 	}
 
+	@GetMapping("/volatile-days")
+	public @ResponseBody List<VolatilityDay> getVolatileDays() {
+		return featureService.getActiveEvents();
+	}
+	
+	
 	@GetMapping("/greeting")
 	public Greeting greeting(@RequestParam(value = "name", defaultValue = "World") final String name) {
 		return new Greeting(counter.incrementAndGet(), String.format(FreePointsController.template, name));

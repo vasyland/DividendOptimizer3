@@ -50,7 +50,7 @@ public class AuthService {
         	
         	
             String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
-            String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication) + "AAA";
+            String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication); //TODO: Remove AAA
 
             //Let's save the refreshToken as well
             saveUserRefreshToken(userInfoEntity, refreshToken);
@@ -62,8 +62,10 @@ public class AuthService {
             return  AuthResponseDto.builder()
                     .accessToken(accessToken)
                     .accessTokenExpiry(15 * 60)
+                    .id(userInfoEntity.getId())
                     .userName(userInfoEntity.getUserName())
                     .tokenType(TokenType.Bearer)
+//                    .refreshToken(refreshToken)
                     .build();
 
             
@@ -96,10 +98,12 @@ public class AuthService {
 	 * @return can be void
 	 */
 	private Cookie creatRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+
 		Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
 		refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setMaxAge(15 * 24 * 60 * 60 ); // in seconds
+        
         response.addCookie(refreshTokenCookie);
         return refreshTokenCookie;
     }
@@ -170,7 +174,7 @@ public class AuthService {
 
 				Optional<UserInfoEntity> user = userInfoRepo.findByEmailId(userRegistrationDto.userEmail());
 				if (user.isPresent()) {
-					throw new Exception("User Already Exist");
+					throw new Exception("User already exists");
 				}
 
 				UserInfoEntity userDetailsEntity = userInfoMapper.convertToEntity(userRegistrationDto);
@@ -189,6 +193,7 @@ public class AuthService {
 				return AuthResponseDto.builder()
 						.accessToken(accessToken)
 						.accessTokenExpiry(5 * 60)
+						.id(savedUserDetails.getId())
 						.userName(savedUserDetails.getUserName())
 						.tokenType(TokenType.Bearer)
 						.build();
