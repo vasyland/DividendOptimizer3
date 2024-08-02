@@ -67,6 +67,7 @@ CREATE TABLE `us_watch_symbol` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 ====== Volatility Dates ================================================
+use golem;
 create table volatility_date (
 	`id` bigint NOT NULL AUTO_INCREMENT,
     `day_date` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -77,10 +78,12 @@ create table volatility_date (
     `active_to_date` datetime NULL,
     `created_on` datetime DEFAULT CURRENT_TIMESTAMP,
     `updated_on` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `UKvolatilitydate` (`day_date`)
+    PRIMARY KEY (`id`)
 ) engine=InnoDB;
+
+-- , UNIQUE KEY `UKvolatilitydate` (`day_date`)
 
 CREATE TABLE `volatility_date_seq` (
   `next_val` bigint DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+-------------------------------------------------------------------------

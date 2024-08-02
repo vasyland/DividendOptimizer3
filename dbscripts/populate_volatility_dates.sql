@@ -37,5 +37,12 @@ VALUES ('2024-09-02','End of IGM 40 day blackuot period','29 of Av',1,'2024-08-1
 INSERT INTO `volatility_date` ( `day_date`, `action_description`, `description`, `active`, `active_from_date`, `active_to_date`) 
 VALUES ('2024-09-04','Rosha Hashana LaBehemot','1st of Elul',1,'2024-08-15','2024-09-25');
 
+INSERT INTO `volatility_date` ( `day_date`, `action_description`, `description`, `active`, `active_from_date`, `active_to_date`) 
+VALUES ('2024-08-05','66','=(8+5+2)=>15=>6+(24)=(66)  Manual Calculation',1,'2024-08-1','2024-08-15');
 
+INSERT INTO `volatility_date` ( `day_date`, `action_description`, `description`, `active`, `active_from_date`, `active_to_date`) 
+VALUES ('2024-08-08','6666','(8+8+2+2+4)=24=>(6666)',1,'2024-08-1','2024-08-15');
+
+INSERT INTO `volatility_date` ( `day_date`, `action_description`, `description`, `active`, `active_from_date`, `active_to_date`) 
+VALUES ('2024-08-11','18, THU  | 666 ','=(8+1+1+2)=12+6=(666) = 18',1,'2024-08-08','2024-08-15');
 
