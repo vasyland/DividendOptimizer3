@@ -24,9 +24,14 @@ public class OptimizerController {
   SymbolService symbolService;
  
 //  @CrossOrigin(origins = "http://localhost:5003")
-  @GetMapping("/buy-list")
-  public @ResponseBody List<SymbolStatus> getRecommendedBuySymbols() {
-    return symbolService.getRecomendedBuySymbols();
+  @GetMapping("/ca-buy-list")
+  public @ResponseBody List<SymbolStatus> getCaRecommendedBuySymbols() {
+    return symbolService.getCaRecomendedBuySymbols();
+  }
+  
+  @GetMapping("/us-buy-list")
+  public @ResponseBody List<SymbolStatus> getUsRecommendedBuySymbols() {
+	return symbolService.getUsRecomendedBuySymbols();
   }
 
 }

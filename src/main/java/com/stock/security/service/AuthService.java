@@ -1,5 +1,6 @@
 package com.stock.security.service;
 
+
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -11,19 +12,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.stock.security.dto.AuthResponseDto;
+import com.stock.security.dto.TokenType;
 import com.stock.security.dto.UserRegistrationDto;
 import com.stock.security.entity.RefreshTokenEntity;
 import com.stock.security.entity.UserInfoEntity;
 import com.stock.security.mapper.UserInfoMapper;
 import com.stock.security.repo.RefreshTokenRepo;
 import com.stock.security.repo.UserInfoRepo;
+import com.stock.security.util.CookieService;
 
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import com.stock.security.dto.TokenType;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,8 @@ public class AuthService {
     private final JwtTokenGenerator jwtTokenGenerator;
     private final RefreshTokenRepo refreshTokenRepo;
     private final UserInfoMapper userInfoMapper;
+    private final LogoutHandlerService logoutHandlerService;
+    private final CookieService cookieService;
     
     public AuthResponseDto getJwtTokensAfterAuthentication(Authentication authentication, HttpServletResponse response) {
        
@@ -47,7 +51,6 @@ public class AuthService {
 
         	log.info("#10 USER EMAIL: " + userInfoEntity.getEmailId());
         	log.info("#20 USER PASSWORD: " + userInfoEntity.getPassword());
-        	
         	
             String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
             String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication); //TODO: Remove AAA
@@ -92,6 +95,7 @@ public class AuthService {
 	
 	
 	/**
+	 * https://dzone.com/articles/how-to-use-cookies-in-spring-boot
 	 * Saving Refresh token as a cookie
 	 * @param response
 	 * @param refreshToken
@@ -100,17 +104,30 @@ public class AuthService {
 	private Cookie creatRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
 
 		Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
-		refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true);
+		refreshTokenCookie.setHttpOnly(false);  //true
+        refreshTokenCookie.setSecure(false);
         refreshTokenCookie.setMaxAge(15 * 24 * 60 * 60 ); // in seconds
         
         response.addCookie(refreshTokenCookie);
+        response.addHeader("refresh_token", refreshToken);
+        
+        Cookie cookie2 = new Cookie("Cookie2", "Cookie2=IHaveTOSellMyCar");
+        cookie2.setHttpOnly(true);  //true
+        cookie2.setSecure(true);
+        cookie2.setMaxAge(15 * 24 * 60 * 60 ); // in seconds
+        cookie2.setPath("/");
+        response.addCookie(cookie2);
+
+        //response.addHeader("refresh_token", refreshToken);
+        
         return refreshTokenCookie;
     }
 	
 	
 	/**
-	 * 
+	 * TODO: This needs to be changed that a new access token will be generated using refresh token present in cookies
+	 * regardless of expiration. Requestcame in from the same browser then it should be generated.
+	 * Thus, incoming parameter shoud be a refresh token from cookies.
 	 * @param authorizationHeader
 	 * @return
 	 */
@@ -144,6 +161,69 @@ public class AuthService {
     }
 	
 	
+	/**
+	 * Generate an empty cookies and call for logut service to revoke refresh token in db
+	 * See https://dzone.com/articles/how-to-use-cookies-in-spring-boot
+	 * @param authorizationHeader
+	 * @param authorization with access token, 
+	 *        request to get current cookies
+	 *        response to send back empty cookies
+	 * @return response with empty refresh token
+	 */
+	public Object logoutUser(String authorizationHeader, HttpServletRequest request, HttpServletResponse response) {
+		
+		
+		log.info("\n\n=================== #200 AuthService.logoutUser() STARTED...");
+		
+		/* Find current refresh token in cookies */
+		Cookie[] cookies = request.getCookies();
+		String activeRefreshToken = cookieService.findCookieByName(cookies, "refresh_token");
+      
+		log.info(" #201 Found refresh token = " + activeRefreshToken);
+		
+        /* Find refreshToken from database and we need a user name to generate a response with empty refresh token. */  
+        var refreshTokenEntity = refreshTokenRepo.findByRefreshToken(activeRefreshToken)
+                .filter(tokens-> !tokens.isRevoked())
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Refresh token revoked or cannot be found"));
+
+        UserInfoEntity userInfoEntity = refreshTokenEntity.getUser();
+        
+        /* Revoke refresh token in the db  */
+		var storedRefreshToken = refreshTokenRepo.findByRefreshToken(activeRefreshToken)
+                .map(token->{
+                    token.setRevoked(true);
+                    refreshTokenRepo.save(token);
+                    return token;
+                })
+                .orElse(null);
+        
+        /* Create the Authentication object */
+        //Authentication authentication =  createAuthenticationObject(userInfoEntity);
+
+        /* Use the authentication object to generate new empty accessToken. */ 
+        String accessToken = "LoggedOut"; // jwtTokenGenerator.generateAccessToken(authentication);
+
+        /* Update refresh token cookie with empty value in the response */
+        Cookie cookie = new Cookie("refresh_token", null);
+        cookie.setMaxAge(0);
+        cookie.setSecure(true);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+
+        /* add cookie to response */
+        response.addCookie(cookie);
+        
+        log.info("#203 Added");
+        
+        return  AuthResponseDto.builder()
+                .accessToken(accessToken)
+                .accessTokenExpiry(5)
+                .userName(userInfoEntity.getUserName())
+                .tokenType(TokenType.Bearer)
+                .build();
+    }
+	
+	
 	
 	 private static Authentication createAuthenticationObject(UserInfoEntity userInfoEntity) {
          // Extract user details from UserDetailsEntity
@@ -159,8 +239,8 @@ public class AuthService {
  
          return new UsernamePasswordAuthenticationToken(username, password, Arrays.asList(authorities));
      }
-	 
-	 
+
+
 	 /**
 	  * Registering a New User
 	  * @param userRegistrationDto
@@ -185,11 +265,16 @@ public class AuthService {
 				String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
 
 				UserInfoEntity savedUserDetails = userInfoRepo.save(userDetailsEntity);
+				
+				log.info("#6 REGISTERED USER ID IS: " + savedUserDetails.getId());
+				
+				
 				saveUserRefreshToken(userDetailsEntity, refreshToken);
 
 				creatRefreshTokenCookie(httpServletResponse, refreshToken);
 
 				log.info("[AuthService:registerUser] User:{} Successfully registered", savedUserDetails.getUserName());
+				
 				return AuthResponseDto.builder()
 						.accessToken(accessToken)
 						.accessTokenExpiry(5 * 60)

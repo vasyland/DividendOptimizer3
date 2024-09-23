@@ -32,6 +32,7 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.stock.security.config.jwt.JwtAccessTokenFilter;
+import com.stock.security.config.jwt.JwtLogoutFilter;
 import com.stock.security.config.jwt.JwtRefreshTokenFilter;
 import com.stock.security.config.jwt.JwtTokenUtils;
 import com.stock.security.config.user.UserInfoManagerConfig;
@@ -61,9 +62,26 @@ public class SecurityConfig {
 	private final RefreshTokenRepo refreshTokenRepo;
 	private final LogoutHandlerService logoutHandlerService;
 	
+//	public SecurityConfig() {}
+//	
+//	public SecurityConfig(
+//			UserInfoManagerConfig userInfoManagerConfig,
+//			RSAKeyRecord rsaKeyRecord,
+//			JwtTokenUtils jwtTokenUtils,
+//			RefreshTokenRepo refreshTokenRepo,
+//			LogoutHandlerService logoutHandlerService) {
+//		
+//		this.userInfoManagerConfig = userInfoManagerConfig;
+//		this.rsaKeyRecord = rsaKeyRecord;
+//		this.jwtTokenUtils = jwtTokenUtils;
+//		this.refreshTokenRepo = refreshTokenRepo;
+//		this.logoutHandlerService = logoutHandlerService;
+//	}
+	
     @Order(1)
     @Bean
-    public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
+    public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+    	log.info("/n/n @Order(1) ");
         return httpSecurity
         		.csrf(AbstractHttpConfigurer::disable)
                 .securityMatcher("/login/**")
@@ -77,10 +95,12 @@ public class SecurityConfig {
                 .httpBasic(withDefaults())
                 .build();
     }
-	
+    
+
   @Order(2)
   @Bean
   public SecurityFilterChain refreshTokenSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
+	  log.info("/n/n @Order(2) ");
       return httpSecurity
       		.csrf(AbstractHttpConfigurer::disable)
       		.securityMatcher("/refresh-token/**")
@@ -97,35 +117,14 @@ public class SecurityConfig {
               .build();
   }
 	
+
  
-	@Order(3)
-	@Bean
-	public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity http) throws Exception {
-	    return http
-	            .securityMatcher("/logout/**")
-	            .csrf(AbstractHttpConfigurer::disable)
-	            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-	            .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
-	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-	            .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord,jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
-	            .logout(logout -> logout
-	                    .logoutUrl("/logout")
-	                    .addLogoutHandler(logoutHandlerService)
-	                    .logoutSuccessHandler(((request, response, authentication) -> SecurityContextHolder.clearContext()))
-	            )
-	            .exceptionHandling(ex -> {
-	                log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to :{}",ex);
-	                ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
-	                ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
-	            })
-	            .build();
-	}
-  
-	  @Order(4)
+	  @Order(3)
 	  @Bean
-	  public SecurityFilterChain registerSecurityFilterChain(HttpSecurity http) throws Exception{
+	  public SecurityFilterChain registerSecurityFilterChain(HttpSecurity http) throws Exception {
+		  log.info("/n/n @Order(3) ");
 	      return http
-	              .securityMatcher("/sign-up/**")
+	              .securityMatcher("/sign-up/**", "/all-cookies")
 	              .csrf(AbstractHttpConfigurer::disable)
 	              .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
 	              .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -133,14 +132,15 @@ public class SecurityConfig {
 	  }
   
 	  
-	  @Order(5)
+	  @Order(4)
 	  @Bean
 	  public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception{
+		  log.info("/n/n @Order(4) ");
 	    return http
 	            .csrf(AbstractHttpConfigurer::disable)
 	            .securityMatcher("/api/**")
 	            .authorizeHttpRequests(auth -> {
-	    			auth.requestMatchers(HttpMethod.GET, "/api/buy-list"); 
+	    			auth.requestMatchers(HttpMethod.GET, "/api/ca-buy-list","/api/us-buy-list"); 
 	    			auth.anyRequest().authenticated();
 	    		})
 	            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
@@ -154,7 +154,109 @@ public class SecurityConfig {
 	            .httpBasic(Customizer.withDefaults())
 	            .build();
 	}	  	
+
 	  
+		@Order(6)
+		@Bean
+		public SecurityFilterChain logoutSecurityFilterChainOrig(HttpSecurity http) throws Exception {
+			log.info("/n/n @Order(6) ");
+			return http
+		            .securityMatcher("/logout/**")
+		            .csrf(AbstractHttpConfigurer::disable)
+		            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+		            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+		            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+		            .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+		            .logout(logout -> logout
+		            		.addLogoutHandler(logoutHandlerService)
+		            		.logoutUrl("/logout")
+		                    .invalidateHttpSession(true)
+		                    .logoutSuccessHandler(((request, response, authentication) -> SecurityContextHolder.clearContext()))
+//		                    .deleteCookies("refresh_token","Cookie2")
+		            )
+		            .exceptionHandling(ex -> {
+		                log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to :{}",ex);
+		                ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+		                ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+		            })
+		            .build();
+		}	  
+
+		
+//		@Order(6) before Customizer
+//		@Bean
+//		public SecurityFilterChain logoutSecurityFilterChainOrig(HttpSecurity http) throws Exception {
+//			log.info("/n/n @Order(6) ");
+//			return http
+//		            .securityMatcher("/logout/**")
+//		            .csrf(AbstractHttpConfigurer::disable)
+//		            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+//		            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+//		            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//		            .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+//		            .logout(logout -> logout
+//		                    .logoutUrl("/logout")
+//		                    .addLogoutHandler(logoutHandlerService)
+//		                    .invalidateHttpSession(true)
+//		                    .logoutSuccessHandler(((request, response, authentication) -> SecurityContextHolder.clearContext()))
+////		                    .deleteCookies("refresh_token","Cookie2")
+//		            )
+//		            .exceptionHandling(ex -> {
+//		                log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to :{}",ex);
+//		                ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//		                ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+//		            })
+//		            .build();
+//		}		
+		
+//	  @Order(5)
+//	  @Bean
+//	  public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
+//	      return httpSecurity
+//	      		.csrf(AbstractHttpConfigurer::disable)
+//	      		.securityMatcher("/log-out/**")
+//	      		.authorizeHttpRequests(auth -> {
+//	    			auth.requestMatchers(HttpMethod.POST, "/log-out"); 
+//	    			auth.anyRequest().authenticated();
+//	    		})
+////	      		.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+//	      		.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+//	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//	              //.addFilterBefore(new JwtRefreshTokenFilter(rsaKeyRecord, jwtTokenUtils, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
+////	              .addFilterBefore(new JwtLogoutFilter(rsaKeyRecord, jwtTokenUtils, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
+//	            .addFilterBefore(new JwtLogoutFilter(rsaKeyRecord, jwtTokenUtils, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
+//	              .exceptionHandling(ex -> {
+//	                  log.error("[SecurityConfig:refreshTokenSecurityFilterChain] Log out Exception due to :{}",ex);
+//	                  ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//	                  ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+//	              })
+////	              .httpBasic(Customizer.withDefaults())
+//	              .build();
+//	  }	  
+	  
+  
+
+
+		//"/refresh-token/**", ORIG
+//	  @Order(7)
+//	  @Bean
+//	  public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
+//	      return httpSecurity
+//	      		.csrf(AbstractHttpConfigurer::disable)
+//	      		.securityMatcher("/log-out/**")
+//	              .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+//	              .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
+//	              .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//	              //.addFilterBefore(new JwtRefreshTokenFilter(rsaKeyRecord,jwtTokenUtils,refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
+//	              .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+//	              .exceptionHandling(ex -> {
+//	                  log.error("[SecurityConfig:refreshTokenSecurityFilterChain] Exception due to :{}",ex);
+//	                  ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//	                  ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+//	              })
+//	              .httpBasic(withDefaults())
+//	              .build();
+//	  }	  	  
 	  
 //	  @Bean
 //	  public SecurityFilterChain api0SecurityFilterChain(HttpSecurity http) throws Exception{
@@ -175,10 +277,11 @@ public class SecurityConfig {
 //	  }	  
 	  
 	  
-  @Order(6)
+  @Order(7)
   @Bean
-  public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception{
-      return http
+  public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
+	  log.info("/n/n @Order(7) ");
+	  return http
   		.csrf(AbstractHttpConfigurer::disable)
   		.securityMatcher("/free/**")
         .authorizeHttpRequests((auth) -> {
@@ -189,8 +292,6 @@ public class SecurityConfig {
   }	
 
   
-  
-    
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

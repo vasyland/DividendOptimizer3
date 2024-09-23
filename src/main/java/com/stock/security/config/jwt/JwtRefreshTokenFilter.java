@@ -21,6 +21,7 @@ import com.stock.security.repo.RefreshTokenRepo;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,20 @@ public class JwtRefreshTokenFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+    	String rToken = null;
+        
+        if(request.getCookies() != null){
+            for(Cookie cookie: request.getCookies()){
+                if(cookie.getName().equals("refresh_token")){
+                	rToken = cookie.getValue();
+                	log.info("800 REFRESH TOKEN = " + rToken);
+                }
+            }
+        } 	
+    	
+     // Test
+        response.addHeader(HttpHeaders.SET_COOKIE, "TEST-TOKEN2");
+    	
         try {
             log.info("[JwtRefreshTokenFilter:doFilterInternal] :: Started ");
 

@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.stock.security.config.RSAKeyRecord;
 import com.stock.security.dto.TokenType;
+import com.stock.security.repo.RefreshTokenRepo;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -28,98 +29,99 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author atquil
- * Custom JwtFilter to validate JWTs that are included in the Authorization header of HTTP Request.
-
-UseCase: User is removed, then also jwtAccessToken will work, so prevent it. 
-
-Let's create the Filter
-
-    OncePerRequestFilter: The filter is implemented as a subclass of OncePerRequestFilter, which ensures that the filter is only applied once per request.
-    The filter uses the rsaKeyRecord object to obtain the RSA public and private keys used to sign and verify the JWTs.
-    JWT
-        Valid: The filter creates an Authentication object and sets it in the SecurityContextHolder. The Authentication object contains the user details and authorities extracted from the JWT.
-        In-valid: If the JWT is not valid, the filter throws a ResponseStatusException with an HTTP 406 Not Acceptable status code
-
+ * Thus filter is required during loguot process using access token, but access token can be expired
+ * We need to validate access token and regardless it is expired or not, and then to validate
+ * 
  */
 @RequiredArgsConstructor
 @Slf4j
-public class JwtAccessTokenFilter extends OncePerRequestFilter {
+public class JwtLogoutFilter extends OncePerRequestFilter {
 
-    private final RSAKeyRecord rsaKeyRecord;
+	private  final RSAKeyRecord rsaKeyRecord;
     private final JwtTokenUtils jwtTokenUtils;
+    private final RefreshTokenRepo refreshTokenRepo;
     
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-    	log.info("\n\n==============  #1 JwtAccessTokenFilter.doFilterInternal started");
-    	
-    	String rToken = null;
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, 
+			HttpServletResponse response, 
+			FilterChain filterChain)
+			throws ServletException, IOException {
+		
+		
+		log.info("\n\n\n >>>>>>>>>>>>>>> $1000 JwtLogoutFilter Started");
+		
+		String rToken = null;
         
         if(request.getCookies() != null){
             for(Cookie cookie: request.getCookies()){
                 if(cookie.getName().equals("refresh_token")){
                 	rToken = cookie.getValue();
-                	log.info("700 REFRESH TOKEN = " + rToken);
+                	log.info("800 REFRESH TOKEN = " + rToken);
                 }
             }
         }
-    	
-        // Test
-        response.addHeader(HttpHeaders.SET_COOKIE, "TEST-TOKEN");
-    	
+        
         try{
+        	
             log.info("[JwtAccessTokenFilter:doFilterInternal] :: Started ");
             log.info("[JwtAccessTokenFilter:doFilterInternal] Filtering the Http Request:{}",request.getRequestURI());
 
             final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-            log.info("================== #3 authHeader: [" + authHeader + "]");
+            log.info("================== #400 authHeader: [" + authHeader +"]");
 
             JwtDecoder jwtDecoder =  NimbusJwtDecoder.withPublicKey(rsaKeyRecord.rsaPublicKey()).build();
 
             if(!authHeader.startsWith(TokenType.Bearer.name())){
-                filterChain.doFilter(request,response);
+            	
+            	log.info("================== #401 authHeader doesn't start with Bearer");
+                filterChain.doFilter(request, response);
                 return;
             }
 
             final String token = authHeader.substring(7); // Skip  the Bearer word
 
             final Jwt jwtToken = jwtDecoder.decode(token);
-            log.info("================= #4 Jwt jwtToken = " + jwtToken.getTokenValue());
+            log.info("================= #402 Jwt jwtToken from Bearer = " + jwtToken.getTokenValue());
 
             final String userName = jwtTokenUtils.getUserName(jwtToken);
-            log.info("================= #5 userName = " + userName);
-
+            log.info("================= #403 userName = " + userName);
+            
             if(!userName.isEmpty() && SecurityContextHolder.getContext().getAuthentication() == null){
-
-            	log.info("================= #6 userName = SecurityContextHolder.getContext().getAuthentication() == null  with username: " + userName);
             	
-                UserDetails userDetails = jwtTokenUtils.userDetails(userName);
+            	log.info("==================     #404 getAuthentication() == null");
+            	UserDetails userDetails = jwtTokenUtils.userDetails(userName);
                 
-                if(jwtTokenUtils.isTokenValid(jwtToken, userDetails)){
+            	//if(jwtTokenUtils.isTokenValid(jwtToken, userDetails)){
+                if(jwtTokenUtils.isTokenLegit(jwtToken, userDetails)){
                 	
-                    SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
-
-                    UsernamePasswordAuthenticationToken createdToken = new UsernamePasswordAuthenticationToken(
+                	log.info("================== #405 isTokenLegit() ==============================");
+                	
+                	SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+                	
+                	UsernamePasswordAuthenticationToken createdToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
                             userDetails.getAuthorities()
                     );
-                    
-                    /* Continue with our request */
+                	log.info("================== #406 createdToken = " + createdToken);
+                	
+                	/* Continue with our request */
                     createdToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     securityContext.setAuthentication(createdToken);
                     SecurityContextHolder.setContext(securityContext);
+                    log.info("==================  #407 createdToken = " + createdToken);
                 }
             }
             log.info("[JwtAccessTokenFilter:doFilterInternal] Completed");
 
-            filterChain.doFilter(request,response);
+            log.info("#408 JwtLogoutFilter  response.getStatus() = " + response.getStatus());
             
+                
+            filterChain.doFilter(request, response);
+        	
         }catch (JwtValidationException jwtValidationException){
             log.error("[JwtAccessTokenFilter:doFilterInternal] Exception due to :{}",jwtValidationException.getMessage());
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE,jwtValidationException.getMessage());
         }
-    }
+	}
 }

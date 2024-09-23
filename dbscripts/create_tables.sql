@@ -8,7 +8,6 @@ CREATE TABLE `watch_symbol` (
   PRIMARY KEY (`symbol`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-
 CREATE TABLE `symbol_status` (
   `symbol` varchar(10) NOT NULL COMMENT 'Stock ticker. TSX with .TO',
   `current_price` decimal(10,4) DEFAULT NULL COMMENT 'Cuurent price taken from yahoo finance',
@@ -24,6 +23,19 @@ CREATE TABLE `symbol_status` (
   `updated_on` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`symbol`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+DROP TABLE `marketing_symbol_status`;
+CREATE TABLE `marketing_symbol_status` (
+  `symbol` varchar(10) NOT NULL COMMENT 'Stock ticker. TSX with .TO',
+  `current_price` decimal(10,4) DEFAULT NULL COMMENT 'Cuurent price taken from yahoo finance',
+  `quoterly_dividend_amount` decimal(10,4) DEFAULT NULL COMMENT 'Majority of comapnies pay dividends on a quaterly basis',
+  `current_yield` decimal(6,4) DEFAULT NULL COMMENT 'Current yeild calculated from (quaterly_dividend_amount * 4) /current_price * 100',
+  `allowed_buy_price` decimal(10,2) DEFAULT NULL COMMENT 'Price just below top yiled price. ',
+  `best_buy_price` decimal(10,2) DEFAULT NULL COMMENT 'Best price to buy. It is at the top of the yield',
+  `updated_on` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`symbol`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 
 
 CREATE TABLE `scenario` (

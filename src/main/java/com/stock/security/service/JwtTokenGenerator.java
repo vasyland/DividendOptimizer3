@@ -31,7 +31,6 @@ public class JwtTokenGenerator {
 
     private final JwtEncoder jwtEncoder;
 
-    
     /**
      * Generating Access Token
      * @param authentication
@@ -47,9 +46,9 @@ public class JwtTokenGenerator {
         String permissions = getPermissionsFromRoles(roles);
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("Atquil-spring-security-original")
+                .issuer("iwm3")
                 .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plus(1, ChronoUnit.MINUTES))
+                .expiresAt(Instant.now().plus(100, ChronoUnit.MINUTES))
                 .subject(authentication.getName())
                 .claim("scope", permissions)
                 .build();
@@ -68,7 +67,7 @@ public class JwtTokenGenerator {
         log.info("[JwtTokenGenerator:generateRefreshToken] Token Creation Started for:{}", authentication.getName());
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("Atquil-spring-security-original")
+                .issuer("iwm3")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plus(15, ChronoUnit.DAYS))
                 .subject(authentication.getName())

@@ -12,11 +12,12 @@ import com.stock.model.SymbolStatus;
 @Repository
 public interface SymbolStatusRepository extends JpaRepository<SymbolStatus, String> {
 
-	@Query(value="select * from symbol_status where recommended_action in (:action)", nativeQuery=true)
-	List<SymbolStatus> getSymbolsByRecommendedAction(@Param("action") List<String> action);
-
-//	@Query(value="select * from symbol_status where recommended_action in (:action)", nativeQuery=true)
-//	List<SymbolStatus> getSymbolsByRecommendedAction(@Param("action") String action);
+	/* Getting CA companies only with .TO */
+	@Query(value="select * from symbol_status where symbol like '%.TO' and recommended_action in (:action)", nativeQuery=true)
+	List<SymbolStatus> getCaSymbolsByRecommendedAction(@Param("action") List<String> action);
 	
+	/* Getting US companies only without .TO */
+	@Query(value="select * from symbol_status where symbol not like '%.TO' and recommended_action in (:action)", nativeQuery=true)
+	List<SymbolStatus> getUsSymbolsByRecommendedAction(@Param("action") List<String> action);
 	
 }

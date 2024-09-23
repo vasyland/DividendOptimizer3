@@ -1,6 +1,8 @@
 package com.stock.security.controllers;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
@@ -13,11 +15,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stock.model.SymbolStatus;
 import com.stock.security.dto.UserRegistrationDto;
 import com.stock.security.service.AuthService;
+import com.stock.security.service.LogoutHandlerService;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthController {
 
     private final AuthService authService;
+    private final LogoutHandlerService logoutHandlerService;
     
     @GetMapping("/login")
     public ResponseEntity<?> authenticateUser(Authentication authentication, HttpServletResponse response){
@@ -45,6 +53,25 @@ public class AuthController {
     public ResponseEntity<?> getAccessToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader){
         return ResponseEntity.ok(authService.getAccessTokenUsingRefreshToken(authorizationHeader));
     }
+    
+    
+//    @GetMapping("/us-buy-list")
+//    public @ResponseBody List<SymbolStatus> getUsRecommendedBuySymbols() {
+//  	return symbolService.getUsRecomendedBuySymbols();
+//    }
+    
+    
+    @PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
+    @PostMapping ("/log-out")
+    public ResponseEntity<?> getOut(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, HttpServletRequest request, HttpServletResponse response){
+        return ResponseEntity.ok(authService.logoutUser(authorizationHeader, request, response));
+    }
+    
+//    @PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
+//    @PostMapping ("/logout")
+//    public ResponseEntity<?> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, HttpServletResponse response){
+//        return ResponseEntity.ok(logoutHandlerService.logout(response, authorizationHeader));
+//    }
     
     @PostMapping("/sign-up")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegistrationDto userRegistrationDto,
@@ -60,7 +87,20 @@ public class AuthController {
             log.error("[AuthController:registerUser]Errors in user:{}",errorMessage);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
         }
-        
         return ResponseEntity.ok(authService.registerUser(userRegistrationDto,httpServletResponse));
     }
+
+
+    @GetMapping("/all-cookies")
+    public String readAllCookies(HttpServletRequest request) {
+
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            return Arrays.stream(cookies)
+                    .map(c -> c.getName() + "=" + c.getValue()).collect(Collectors.joining(", "));
+        }
+
+        return "No cookies";
+    }
+
 }

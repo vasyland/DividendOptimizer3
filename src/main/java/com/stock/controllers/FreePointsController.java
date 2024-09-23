@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stock.model.MarketingStatusSymbol;
 import com.stock.model.SymbolStatus;
 import com.stock.model.VolatilityDay;
 import com.stock.services.FeatureService;
@@ -30,9 +31,14 @@ public class FreePointsController {
 	@Autowired
 	FeatureService featureService;
 
-	@GetMapping("/free-buy-list")
-	public @ResponseBody List<SymbolStatus> getFreeRecommendedBuySymbols() {
-		return symbolService.getRecomendedBuySymbols();
+	@GetMapping("/free-ca-buy-list")
+	public @ResponseBody List<SymbolStatus> getFreeCaRecommendedBuySymbols() {
+		return symbolService.getCaRecomendedBuySymbols();
+	}
+	
+	@GetMapping("/free-us-buy-list")
+	public @ResponseBody List<SymbolStatus> getFreeUsRecommendedBuySymbols() {
+		return symbolService.getUsRecomendedBuySymbols();
 	}
 
 	@GetMapping("/volatile-days")
@@ -46,4 +52,14 @@ public class FreePointsController {
 		return new Greeting(counter.incrementAndGet(), String.format(FreePointsController.template, name));
 	}
 
+	@GetMapping("/marketing-ca-list")
+	public @ResponseBody List<MarketingStatusSymbol> getCaMarketingSymbols() {
+		return symbolService.getCaMarketingStatusSymbols();
+	}
+	
+	@GetMapping("/marketing-us-list")
+	public @ResponseBody List<MarketingStatusSymbol> getUsMarketingSymbols() {
+		return symbolService.getUsMarketingStatusSymbols();
+	}	
+	
 }
