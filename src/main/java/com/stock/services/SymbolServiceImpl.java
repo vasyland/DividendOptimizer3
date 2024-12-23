@@ -36,13 +36,13 @@ public class SymbolServiceImpl implements SymbolService {
 	@Override
 	public List<SymbolStatus> getCaRecomendedBuySymbols() {
 		
-		List<String> actions = Arrays.asList(new String[]{"Buy","Hold"});
+		List<String> actions = Arrays.asList(new String[]{"Buy"});  //,"Hold"
 		return symbolStatusRepository.getCaSymbolsByRecommendedAction(actions);
 	}
 
 	@Override
 	public List<SymbolStatus> getUsRecomendedBuySymbols() {
-		List<String> actions = Arrays.asList(new String[]{"Buy","Hold"});
+		List<String> actions = Arrays.asList(new String[]{"Buy"}); // ,"Hold"
 		return symbolStatusRepository.getUsSymbolsByRecommendedAction(actions);
 	}
 

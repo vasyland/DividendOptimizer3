@@ -4,11 +4,14 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.stock.model.MarketingStatusSymbol;
 import com.stock.model.SymbolStatus;
@@ -51,11 +54,19 @@ public class FreePointsController {
 	public Greeting greeting(@RequestParam(value = "name", defaultValue = "World") final String name) {
 		return new Greeting(counter.incrementAndGet(), String.format(FreePointsController.template, name));
 	}
-
+	
 	@GetMapping("/marketing-ca-list")
-	public @ResponseBody List<MarketingStatusSymbol> getCaMarketingSymbols() {
-		return symbolService.getCaMarketingStatusSymbols();
-	}
+	public ResponseEntity<List<MarketingStatusSymbol>> getCaMarketingSymbols() {
+		return ResponseEntity.ok()
+				.contentType(MediaType.APPLICATION_JSON)
+				.body(symbolService.getCaMarketingStatusSymbols());
+	}	
+	
+//	orig
+//	@GetMapping("/marketing-ca-list")
+//	public @ResponseBody List<MarketingStatusSymbol> getCaMarketingSymbols() {
+//		return symbolService.getCaMarketingStatusSymbols();
+//	}
 	
 	@GetMapping("/marketing-us-list")
 	public @ResponseBody List<MarketingStatusSymbol> getUsMarketingSymbols() {

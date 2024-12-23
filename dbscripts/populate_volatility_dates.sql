@@ -93,4 +93,5 @@ VALUES ('2024-11-05','US Presidential Election','Tuesday',1,'2024-11-01','2024-1
 INSERT INTO `volatility_date` ( `day_date`, `action_description`, `description`, `active`, `active_from_date`, `active_to_date`) 
 VALUES ('2024-11-05','US Presidential Election','Tuesday',1,'2024-11-01','2024-11-10');
 
+-- December 2024
 

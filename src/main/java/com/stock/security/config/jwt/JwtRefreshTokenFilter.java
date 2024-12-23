@@ -55,7 +55,7 @@ public class JwtRefreshTokenFilter extends OncePerRequestFilter {
         } 	
     	
      // Test
-        response.addHeader(HttpHeaders.SET_COOKIE, "TEST-TOKEN2");
+        //response.addHeader(HttpHeaders.SET_COOKIE, "TEST-TOKEN2");
     	
         try {
             log.info("[JwtRefreshTokenFilter:doFilterInternal] :: Started ");

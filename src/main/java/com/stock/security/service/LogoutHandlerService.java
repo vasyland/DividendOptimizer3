@@ -59,7 +59,7 @@ public class LogoutHandlerService implements LogoutHandler {
     
     
     /**
-     * https://dzone.com/articles/how-to-use-cookies-in-spring-boot
+     * 
      */
     @Override
     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {

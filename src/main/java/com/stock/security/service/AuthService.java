@@ -39,7 +39,11 @@ public class AuthService {
     private final LogoutHandlerService logoutHandlerService;
     private final CookieService cookieService;
     
-    public AuthResponseDto getJwtTokensAfterAuthentication(Authentication authentication, HttpServletResponse response) {
+    public AuthResponseDto getJwtTokensAfterAuthentication(Authentication authentication, 
+    		HttpServletResponse response) {
+    	
+    	
+    	log.info("#09 AuthResponseDto getJwtTokensAfterAuthentication: " + authentication.getName());
        
     	try {
            
@@ -111,7 +115,7 @@ public class AuthService {
         response.addCookie(refreshTokenCookie);
         response.addHeader("refresh_token", refreshToken);
         
-        Cookie cookie2 = new Cookie("Cookie2", "Cookie2=IHaveTOSellMyCar");
+        Cookie cookie2 = new Cookie("Cookie2", "IGotRidofMyCar");
         cookie2.setHttpOnly(true);  //true
         cookie2.setSecure(true);
         cookie2.setMaxAge(15 * 24 * 60 * 60 ); // in seconds
@@ -131,13 +135,13 @@ public class AuthService {
 	 * @param authorizationHeader
 	 * @return
 	 */
-	public Object getAccessTokenUsingRefreshToken(String authorizationHeader) {
+	public Object getAccessTokenUsingRefreshToken(String authorizationHeader, String refreshToken ) {
 		 
         if(!authorizationHeader.startsWith(TokenType.Bearer.name())){
             return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Please verify your token type");
         }
 
-        final String refreshToken = authorizationHeader.substring(7);
+        //final String refreshToken = authorizationHeader.substring(7);
 
         //Find refreshToken from database and should not be revoked : Same thing can be done through filter.  
         var refreshTokenEntity = refreshTokenRepo.findByRefreshToken(refreshToken)
@@ -162,7 +166,7 @@ public class AuthService {
 	
 	
 	/**
-	 * Generate an empty cookies and call for logut service to revoke refresh token in db
+	 * Generate an empty cookies and call for logout service to revoke refresh token in db
 	 * See https://dzone.com/articles/how-to-use-cookies-in-spring-boot
 	 * @param authorizationHeader
 	 * @param authorization with access token, 
