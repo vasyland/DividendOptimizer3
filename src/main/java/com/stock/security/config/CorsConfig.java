@@ -22,7 +22,7 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         
         // Allow the origin from which the request is coming
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5004","https://localhost:5004","http://localhost:5003","https://localhost:5003","http://localhost:8440","http://localhost:9080","https://localhost:9443"));
+        config.setAllowedOrigins(Arrays.asList("https://localhost:5004","http://localhost:5004","http://localhost:8440","http://localhost:9080","https://localhost:9443"));
 
         // Allow specific HTTP methods (GET, POST, etc.)
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));

@@ -44,7 +44,7 @@ public class AuthController {
     @PostMapping("/sign-up")
 //    @CrossOrigin(origins = "https://localhost:5003", allowedHeaders = "*", allowCredentials = "true")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegistrationDto userRegistrationDto,
-                                          BindingResult bindingResult, HttpServletResponse httpServletResponse){
+                                          BindingResult bindingResult, HttpServletResponse response){
 
         log.info("[AuthController:registerUser]Signup Process Started for user:{}",userRegistrationDto.userName());
 
@@ -55,16 +55,23 @@ public class AuthController {
             log.error("[AuthController:registerUser]Errors in user:{}",errorMessage);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
         }
-        return ResponseEntity.ok(authService.registerUser(userRegistrationDto,httpServletResponse));
+        return ResponseEntity.ok(authService.registerUser(userRegistrationDto, response));
     }    
 
+ 
+//    @GetMapping("/sign-in")
+//    public ResponseEntity<?> authenticateUser(Authentication authentication, HttpServletResponse response){
+//    	log.info("#1 /sigh-in authentication.getName() = " + authentication.getName());
+//        return ResponseEntity.ok(authService.getJwtTokensAfterAuthentication(authentication, response));
+//    }
 
-    @GetMapping("/login")
+    @GetMapping("/sign-in")
     public ResponseEntity<?> authenticateUser(Authentication authentication, HttpServletResponse response){
-    	log.info("#1 /login authentication.getName() = " + authentication.getName());
+    	log.info("#1 /sigh-in authentication.getName() = " + authentication.getName());
+    	log.info("#2 /sigh-in authentication.getCredentials() = " + authentication.getCredentials());
         return ResponseEntity.ok(authService.getJwtTokensAfterAuthentication(authentication, response));
-    }
-
+    }    
+    
 
   //@PreAuthorize("hasAnyRole('ROLE_MANAGER','ROLE_ADMIN','ROLE_USER')")
     @PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
@@ -75,8 +82,6 @@ public class AuthController {
     	if (refreshToken == null || refreshToken.isEmpty()) {
     		return ResponseEntity.badRequest().body("Refresh token is missing");
     	}
-    	
-    	
         return ResponseEntity.ok(authService.getAccessTokenUsingRefreshToken(authorizationHeader, refreshToken));
     }
     
@@ -102,8 +107,7 @@ public class AuthController {
          if (cookies != null) {
              String cook =  Arrays.stream(cookies)
                      .map(c -> c.getName() + "=" + c.getValue()).collect(Collectors.joining(", "));
-             log.info("#1 Logout COokies: " + cook);
-             
+             log.info("#1 Logout Cookies: " + cook);
          }
          
         return ResponseEntity.ok(authService.logoutUser(null, request, response));
@@ -141,7 +145,6 @@ public class AuthController {
             return Arrays.stream(cookies)
                     .map(c -> c.getName() + "=" + c.getValue()).collect(Collectors.joining(", "));
         }
-
         return "No cookies";
     }
     
@@ -153,7 +156,6 @@ public class AuthController {
             return Arrays.stream(cookies)
                     .map(c -> c.getName() + "=" + c.getValue()).collect(Collectors.joining(", "));
         }
-
         return "No cookies";
     }
 

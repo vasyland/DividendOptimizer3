@@ -79,6 +79,27 @@ public class JwtTokenGenerator {
     
     
     /**
+     * Generating Refresh Token when a user signs up
+     * Available for 3 months
+     * @param authentication
+     * @return
+     */
+    public String generateRefreshTokenAfterSignup(String username) {
+
+        log.info("[JwtTokenGenerator:generateRefreshToken] Token Creation Started for signup:{}", username);
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer("iwm3")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plus(15, ChronoUnit.DAYS))
+                .subject(username)
+                .claim("scope", "REFRESH_TOKEN")
+                .build();
+
+        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    }
+    
+    /**
      * Extracting roles from the authentication object
      * @param authentication
      * @return

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -39,9 +40,110 @@ public class AuthService {
     private final LogoutHandlerService logoutHandlerService;
     private final CookieService cookieService;
     
-    public AuthResponseDto getJwtTokensAfterAuthentication(Authentication authentication, 
+    
+	 /**
+	  * Registering a New User
+	  * @param userRegistrationDto
+	  * @param httpServletResponse
+	  * @return
+	  */
+		public AuthResponseDto registerUser(UserRegistrationDto userRegistrationDto,
+				HttpServletResponse response) {
+			try {
+				log.info("[AuthService:registerUser]User Registration Started with :::{}", userRegistrationDto);
+
+				Optional<UserInfoEntity> user = userInfoRepo.findByEmailId(userRegistrationDto.userEmail());
+				if (user.isPresent()) {
+					throw new Exception("User already exists");
+				}
+
+				UserInfoEntity userDetailsEntity = userInfoMapper.convertToEntity(userRegistrationDto);
+				Authentication authentication = createAuthenticationObject(userDetailsEntity);
+
+				/* Generate a JWT token */
+				String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
+				String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
+
+				UserInfoEntity savedUserDetails = userInfoRepo.save(userDetailsEntity);
+				
+				log.info("#6 REGISTERED USER ID IS: " + savedUserDetails.getId());
+				log.info("#7 Refresh Token: " + refreshToken);
+				
+				//Let's save the refreshToken as well
+				saveUserRefreshToken(userDetailsEntity, refreshToken);
+				creatRefreshTokenCookie(response, refreshToken);
+
+				log.info("[AuthService:registerUser] User:{} Successfully registered", savedUserDetails.getUserName());
+				
+				HttpHeaders headers = new HttpHeaders();
+		        
+		        // Create the cookie and add it to the response header
+		        headers.add("Set-Cookie", "username=john_doe; Max-Age=86400; HttpOnly; Secure; Path=/");
+				
+				return AuthResponseDto.builder()
+						.accessToken(accessToken)
+						.accessTokenExpiry(5 * 60)
+						.id(savedUserDetails.getId())
+						.userName(savedUserDetails.getUserName())
+						.tokenType(TokenType.Bearer)
+						.build();
+
+			} catch (Exception e) {
+				log.error("[AuthService:registerUser]Exception while registering the user due to :" + e.getMessage());
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+			}
+		}    
+    
+    
+		
+		public AuthResponseDto getJwtTokensAfterAuthentication(Authentication authentication, 
+		        HttpServletResponse response) {
+
+		    log.info("#09 AuthResponseDto getJwtTokensAfterAuthentication: " + authentication.getName());
+		   
+		    try {
+		        // Getting user authentication data from the database
+		        var userInfoEntity = userInfoRepo.findByEmailId(authentication.getName())
+		                .orElseThrow(() -> {
+		                    log.error("[AuthService:userSignInAuth] User :{} not found", authentication.getName());
+		                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication failed: Invalid credentials");
+		                });
+
+		        log.info("#10 USER EMAIL: " + userInfoEntity.getEmailId());
+		        log.info("#20 USER PASSWORD: " + userInfoEntity.getPassword());
+		        
+		        String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
+		        String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
+
+		        // Save the refresh token
+		        saveUserRefreshToken(userInfoEntity, refreshToken);
+
+		        // Create cookies
+		        creatRefreshTokenCookie(response, refreshToken);
+		        
+		        log.info("[AuthService:userSignInAuth] Access token for user:{}, has been generated", userInfoEntity.getUserName());
+		        return AuthResponseDto.builder()
+		                .accessToken(accessToken)
+		                .accessTokenExpiry(15 * 60)
+		                .id(userInfoEntity.getId())
+		                .userName(userInfoEntity.getUserName())
+		                .tokenType(TokenType.Bearer)
+		                .build();
+		        
+		    } catch (ResponseStatusException ex) {
+		        // Handle known exceptions with precise messages
+		        log.error("[AuthService:userSignInAuth] Authentication error: {}", ex.getReason());
+		        throw ex; // Retain the specific HTTP status and message
+		    } catch (Exception e) {
+		        // Handle unexpected errors
+		        log.error("[AuthService:userSignInAuth] Exception while authenticating the user due to: {}", e.getMessage());
+		        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again later.");
+		    }
+		}
+
+		
+    public AuthResponseDto getJwtTokensAfterAuthenticationOriginal(Authentication authentication, 
     		HttpServletResponse response) {
-    	
     	
     	log.info("#09 AuthResponseDto getJwtTokensAfterAuthentication: " + authentication.getName());
        
@@ -62,7 +164,7 @@ public class AuthService {
             //Let's save the refreshToken as well
             saveUserRefreshToken(userInfoEntity, refreshToken);
            
-            //Creating the cookie
+            //Creating cookies
             creatRefreshTokenCookie(response, refreshToken);
             
             log.info("[AuthService:userSignInAuth] Access token for user:{}, has been generated",userInfoEntity.getUserName());
@@ -74,7 +176,6 @@ public class AuthService {
                     .tokenType(TokenType.Bearer)
 //                    .refreshToken(refreshToken)
                     .build();
-
             
         }catch (Exception e){
             log.error("[AuthService:userSignInAuth]Exception while authenticating the user due to :"+e.getMessage());
@@ -108,21 +209,20 @@ public class AuthService {
 	private Cookie creatRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
 
 		Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
-		refreshTokenCookie.setHttpOnly(false);  //true
-        refreshTokenCookie.setSecure(false);
+		refreshTokenCookie.setHttpOnly(true);  // change to false in prod
+        refreshTokenCookie.setSecure(false);   // change to true in prod
+        refreshTokenCookie.setPath("/");
         refreshTokenCookie.setMaxAge(15 * 24 * 60 * 60 ); // in seconds
         
         response.addCookie(refreshTokenCookie);
-        response.addHeader("refresh_token", refreshToken);
+//        response.addHeader("refresh_token", refreshToken);
         
         Cookie cookie2 = new Cookie("Cookie2", "IGotRidofMyCar");
-        cookie2.setHttpOnly(true);  //true
-        cookie2.setSecure(true);
+        cookie2.setHttpOnly(true);  // change to false in prod
+        cookie2.setSecure(false);   // change to true in prod
         cookie2.setMaxAge(15 * 24 * 60 * 60 ); // in seconds
         cookie2.setPath("/");
         response.addCookie(cookie2);
-
-        //response.addHeader("refresh_token", refreshToken);
         
         return refreshTokenCookie;
     }
@@ -130,7 +230,7 @@ public class AuthService {
 	
 	/**
 	 * TODO: This needs to be changed that a new access token will be generated using refresh token present in cookies
-	 * regardless of expiration. Requestcame in from the same browser then it should be generated.
+	 * regardless of expiration. Request came in from the same browser then it should be generated.
 	 * Thus, incoming parameter shoud be a refresh token from cookies.
 	 * @param authorizationHeader
 	 * @return
@@ -251,8 +351,8 @@ public class AuthService {
 	  * @param httpServletResponse
 	  * @return
 	  */
-		public AuthResponseDto registerUser(UserRegistrationDto userRegistrationDto,
-				HttpServletResponse httpServletResponse) {
+		public AuthResponseDto registerUser2(UserRegistrationDto userRegistrationDto,
+				HttpServletResponse response) {
 			try {
 				log.info("[AuthService:registerUser]User Registration Started with :::{}", userRegistrationDto);
 
@@ -271,11 +371,10 @@ public class AuthService {
 				UserInfoEntity savedUserDetails = userInfoRepo.save(userDetailsEntity);
 				
 				log.info("#6 REGISTERED USER ID IS: " + savedUserDetails.getId());
-				
+				log.info("#7 Refresh Token: " + refreshToken);
 				
 				saveUserRefreshToken(userDetailsEntity, refreshToken);
-
-				creatRefreshTokenCookie(httpServletResponse, refreshToken);
+				creatRefreshTokenCookie(response, refreshToken);
 
 				log.info("[AuthService:registerUser] User:{} Successfully registered", savedUserDetails.getUserName());
 				
@@ -292,4 +391,5 @@ public class AuthService {
 				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
 			}
 		}
+	
 }

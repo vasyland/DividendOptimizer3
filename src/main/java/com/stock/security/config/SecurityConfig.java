@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -48,6 +49,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+
 /**
  * See https://docs.spring.io/spring-security/reference/5.8/migration/servlet/config.html
  * 
@@ -71,9 +76,43 @@ public class SecurityConfig {
 	@Autowired
     private final CustomLogoutHandler customLogoutHandler;
 	
-//	//Working copy
-
+	/** 
+	 * sign-in is because Spring Boot has its own login somewhere 
+	 * @param httpSecurity
+	 * @return
+	 * @throws Exception
+	 */
 	@Order(1)
+    @Bean
+    public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+        return httpSecurity
+        		.csrf(AbstractHttpConfigurer::disable)
+                .securityMatcher("/sign-in")
+                .authorizeHttpRequests(auth -> auth
+            		.requestMatchers("/sign-in").permitAll()
+//            		.requestMatchers(HttpMethod.GET, "/login").permitAll()
+                )
+                .userDetailsService(userInfoManagerConfig)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//                .httpBasic(Customizer.withDefaults())
+                .httpBasic(httpBasic -> httpBasic
+                        .authenticationEntryPoint(noPopupBasicAuthenticationEntryPoint()) // suppress pop-up
+                )
+                .build();
+    }
+
+
+	/**
+	 * This class is to suppress  The authentication pop-up is caused by the response header WWW-Authenticate: Basic, 
+	 * which is set by BasicAuthenticationEntryPoint.
+ 	 * @return
+	 */
+	@Bean
+    public AuthenticationEntryPoint noPopupBasicAuthenticationEntryPoint() {
+        return new NoPopupBasicAuthenticationEntryPoint();
+    }
+
+	@Order(2)
     @Bean
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -119,47 +158,60 @@ public class SecurityConfig {
 //                .build();
 //    }
     
+//    @Order(2)
+//    @Bean
+//    public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+//        return httpSecurity
+//                .securityMatcher("/login")
+//                .authorizeHttpRequests(auth -> auth
+////                		.requestMatchers("/login").permitAll()
+//                		.requestMatchers(HttpMethod.GET, "/login").permitAll()
+//                )
+//                .userDetailsService(userInfoManagerConfig)
+//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//                .httpBasic(withDefaults())
+//                .build();
+//    }
     
-    @Order(2)
-    @Bean
-    public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity
-//        		.csrf(AbstractHttpConfigurer::disable)
-//                .securityMatcher("/login/**")
-                .securityMatcher("/login")
-//                .securityMatcher(new AntPathRequestMatcher("/login"))
-//                .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
-                .authorizeHttpRequests(auth -> auth
-      	              .requestMatchers("/login").permitAll()  // Allow access to sign-up
-      	              .anyRequest().authenticated()  // Other requests need to be authenticated
-      	          )
-                .userDetailsService(userInfoManagerConfig)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> {
-                	log.error("ERROR LOGIN" + ex.toString());
-                    ex.authenticationEntryPoint((request, response, authException) ->
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
-                })
-                .httpBasic(Customizer.withDefaults())
-                .build();
-    }    
-    
-    @Order(3)
-    @Bean
-    public SecurityFilterChain registerSecurityFilterChain(HttpSecurity http) throws Exception {
-        return http
-        	.securityMatcher("/sign-up/**", "/all-cookies")
-            .csrf(AbstractHttpConfigurer::disable)  // Disable CSRF for stateless JWT-based API
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/sign-up/**", "/all-cookies").permitAll()  // Allow access to sign-up
-                .anyRequest().authenticated()  // Other requests need to be authenticated
-            )
-            .sessionManagement(session -> session
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // Stateless session
-            .build();
-    }    
+	
+	  @Order(3)
+	    @Bean
+	    public SecurityFilterChain registerSecurityFilterChain(HttpSecurity http) throws Exception {
+	        return http
+	        	.securityMatcher("/sign-up")
+	            .csrf(AbstractHttpConfigurer::disable)
+	            .authorizeHttpRequests(auth -> auth
+	                .requestMatchers("/sign-up").permitAll()
+	            )
+	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+	            .exceptionHandling(ex -> {
+	            	log.error("ERROR sign-up" + ex.toString());
+	                ex.authenticationEntryPoint((request, response, authException) ->
+	                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
+	            })
+	            .build();
+	    }    	
+	
+	
+//    @Order(3)
+//    @Bean
+//    public SecurityFilterChain registerSecurityFilterChain(HttpSecurity http) throws Exception {
+//        return http
+//        	.securityMatcher("/sign-up")
+//            .csrf(AbstractHttpConfigurer::disable)
+//            .authorizeHttpRequests(auth -> auth
+//                .requestMatchers("/sign-up").permitAll()
+//            )
+//            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//            .exceptionHandling(ex -> {
+//            	log.error("ERROR sign-up" + ex.toString());
+//                ex.authenticationEntryPoint((request, response, authException) ->
+//                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
+//            })
+//            .build();
+//    }    
 
-    
+
     @Order(4)
     @Bean
     public SecurityFilterChain refreshTokenSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
@@ -167,7 +219,6 @@ public class SecurityConfig {
         		.securityMatcher("/refresh-token")
         		.csrf(AbstractHttpConfigurer::disable)
         		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        		
         		.authorizeHttpRequests(auth -> auth
         	              .requestMatchers("/refresh-token").permitAll()  // Allow access to sign-up
         	              .anyRequest().authenticated()  // Other requests need to be authenticated
@@ -213,12 +264,7 @@ public class SecurityConfig {
             })
             .build();
     }
-	  
-
-
-		
-
-		
+	  		
 	  @Order(6)
 	  @Bean
 	  public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
