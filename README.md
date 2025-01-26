@@ -35,20 +35,84 @@ Generating 2,048 bit RSA key pair and self-signed certificate (SHA384withRSA) wi
 
 ###Setting application to run SSL
 ```
-2. 
+TBD
 
 ```
 
 ### ###Setting application to run SSL for local development
 ```
-1. 
-2. 
+TBD
 
 ```
 
 
 ### Refresh Token Management
-Refresh token lives 1 week. After one week a user must relogin upon access token expiration. 
-User has only one refresh token record and every time when a user refresh token expired it has to be renewed (updated)
-Refresh token has to be checked on revocation field. Both refresh and access token should be invalidated when revocation date was met.
-Revocation date should be checked every time when the access token refreshed. It shuld be appropriate message.
+```
+TBD
+```
+
+### System Requirements
+```
+C:\AV\WorkProjects\DividendOptimizer3>java -version
+	openjdk version "21.0.2" 2024-01-16
+	OpenJDK Runtime Environment (build 21.0.2+13-58)
+	OpenJDK 64-Bit Server VM (build 21.0.2+13-58, mixed mode, sharing)
+
+   Download for your OS from here: https://jdk.java.net/archive/
+
+   set JAVA_HOME=C:\Tools\jdk-21.0.2
+
+
+Gradle 8.8 it is donloaded during the build but if you want to have it on your laptop to use with eclipse
+Download for your OS from here: https://gradle.org/releases/
+
+Eclipse Version: 2024-03 (4.31.0) or any newer for your OS: https://www.eclipse.org/
+but it looks like the link is broken. Check it later.
+```
+
+### DividendOptimizer3 Build and Run
+```
+1. Create a folder where you will check DividendOptimizer project from the github: https://github.com/vasyland/DividendOptimizer3
+
+2. Create a folder: C:\tmp\JavaProject
+   cd C:\tmp\JavaProject
+   git clone git@github.com:vasyland/DividendOptimizer3.git
+   
+3. Replace application.yml file with provided in skype in the folder: 
+   C:\tmp\JavaProject\DividendOptimizer3\src\main\resources
+   
+4. Run gradle command to buid:
+   cd C:\tmp\JavaProject\DividendOptimizer3
+   For Linux: ./gradlew build
+   For WIndows: gradle.bat build
+
+   The jar file will be built in the folder: C:\tmp\JavaProject\DividendOptimizer3\build\libs
+
+3. Run the project: 
+   cd C:\tmp\JavaProject\DividendOptimizer3\build\libs
+   java -jar DividendOptimizer3-0.0.3-SNAPSHOT.jar
+
+   Put full path to your java if you don't have JAVA_HOME set.
+
+4. From the Postman test with following: 
+   https://localhost:8081/free/greeting
+   
+   Response: {
+    "id": 1,
+    "content": "Hello, World!"
+   }
+
+5. Test login GET https://localhost:8081/sign-in
+	with user: "gleb@gmail.com" with password "password"
+	Response:
+	{
+    "id": 102,
+    "access_token": "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJpd20zIiwic3ViIjoiZ2xlYkBnbWFpbC5jb20iLCJleHAiOjE3Mzc5MjQ1NTAsImlhdCI6M.....tiSi1YEWi-5FQFJeqP1t47fNQNwOapsSXv5RNWSvRbK8Frw",
+    "access_token_expiry": 900,
+    "token_type": "Bearer",
+    "user_name": "gleb",
+    "subscription_end_date": "2025-01-29"
+   }
+```
+
+
