@@ -28,7 +28,7 @@ public class FeatureServiceImpl implements FeatureService {
 		
 		/* 1. Get start view date and a date of two weeks ahead */
 		String viewStartDate = DateUtil.getShiftedDate(-1); //-2
-		String viewEndDate = DateUtil.getShiftedDate(12);  //14
+		String viewEndDate = DateUtil.getShiftedDate(60);  //14 30
 		
 		log.info("viewStartDate = " + viewStartDate);
 		log.info("viewEndDate = " + viewEndDate);

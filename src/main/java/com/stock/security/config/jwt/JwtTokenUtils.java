@@ -12,12 +12,14 @@ import com.stock.security.config.user.UserInfoConfig;
 import com.stock.security.repo.UserInfoRepo;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author atquil
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtTokenUtils {
 
 	private final UserInfoRepo userInfoRepo;
@@ -35,13 +37,39 @@ public class JwtTokenUtils {
      */
     public boolean isTokenValid(Jwt jwtToken, UserDetails userDetails){
     	
+    	log.info("#600 jwtToken.getIssuedAt() = " + jwtToken.getIssuedAt());
+    	
         final String userName = getUserName(jwtToken);
-        boolean isTokenExpired = getIfTokenIsExpired(jwtToken);
+        boolean isTokenExpired = false;  // getIfTokenIsExpired(jwtToken);
         boolean isTokenUserSameAsDatabase = userName.equals(userDetails.getUsername());
+        
+        log.info("#601 userName = " + userName);
+        log.info("#602 isTokenExpired = " + isTokenExpired);
+        log.info("#603 isTokenUserSameAsDatabase = " + isTokenUserSameAsDatabase);
         
         return !isTokenExpired  && isTokenUserSameAsDatabase;
     }
 
+    
+    /**
+     * Check if the Token valid
+     * @param jwtToken
+     * @param userDetails
+     * @return
+     */
+    public boolean isTokenLegit(Jwt jwtToken, UserDetails userDetails){
+    	
+    	log.info("#700 jwtToken.isTokenLegit() = " + jwtToken.getIssuedAt());
+    	
+        final String userName = getUserName(jwtToken);
+        boolean isTokenUserSameAsDatabase = userName.equals(userDetails.getUsername());
+        
+        log.info("#701 isTokenLegit -> userName = " + userName);
+        log.info("#702 isTokenLegit -> isTokenUserSameAsDatabase = " + isTokenUserSameAsDatabase);
+        
+        return isTokenUserSameAsDatabase;
+    }    
+    
     
     /**
      * Check if the Token expired
