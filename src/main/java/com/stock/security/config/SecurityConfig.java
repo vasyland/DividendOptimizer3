@@ -11,6 +11,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,6 +56,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 
 /**
  * See https://docs.spring.io/spring-security/reference/5.8/migration/servlet/config.html
+ *     https://docs.spring.io/spring-security/reference/6.3/migration/authorization.html
  * 
  */
 
@@ -136,42 +138,6 @@ public class SecurityConfig {
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
             .build();
     }
-	
-	
-//    @Order(2)
-//    @Bean
-//    public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
-//        return httpSecurity
-////        		.csrf(AbstractHttpConfigurer::disable)
-////                .securityMatcher("/login/**")
-//                .securityMatcher("/login")
-////                .securityMatcher(new AntPathRequestMatcher("/login"))
-//                .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
-//                .userDetailsService(userInfoManagerConfig)
-//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .exceptionHandling(ex -> {
-//                	log.error("ERROR LOGIN" + ex.toString());
-//                    ex.authenticationEntryPoint((request, response, authException) ->
-//                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
-//                })
-//                .httpBasic(Customizer.withDefaults())
-//                .build();
-//    }
-    
-//    @Order(2)
-//    @Bean
-//    public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
-//        return httpSecurity
-//                .securityMatcher("/login")
-//                .authorizeHttpRequests(auth -> auth
-////                		.requestMatchers("/login").permitAll()
-//                		.requestMatchers(HttpMethod.GET, "/login").permitAll()
-//                )
-//                .userDetailsService(userInfoManagerConfig)
-//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .httpBasic(withDefaults())
-//                .build();
-//    }
     
 	
 	  @Order(3)
@@ -193,52 +159,77 @@ public class SecurityConfig {
 	    }    	
 	
 	
-//    @Order(3)
+  
+	  @Order(4)
+	    @Bean
+	    public SecurityFilterChain allCookiesSecurityFilterChain(HttpSecurity http) throws Exception {
+	        return http
+	        	.securityMatcher("/all-cookies")
+	            .csrf(AbstractHttpConfigurer::disable)
+	            .authorizeHttpRequests(auth -> auth
+	                .requestMatchers("/all-cookies").permitAll()
+	            )
+	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+	            .exceptionHandling(ex -> {
+	            	log.error("ERROR all-cookies" + ex.toString());
+	                ex.authenticationEntryPoint((request, response, authException) ->
+	                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
+	            })
+	            .build();
+	    }    	
+
+	  
+	//Original
+	@Order(5)
+	@Bean
+	public SecurityFilterChain refreshTokenSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
+	  return httpSecurity
+	  		.csrf(AbstractHttpConfigurer::disable)
+	  		.securityMatcher("/refresh-token")
+	          .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+	          .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+	          .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+	          .addFilterBefore(new JwtRefreshTokenFilter(rsaKeyRecord,jwtTokenUtils,refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
+	          .exceptionHandling(ex -> {
+	        	  ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+	        	  ex.accessDeniedHandler((request, response, accessDeniedException) -> {
+	        	        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+	        	        response.getWriter().write("Access Denied: " + accessDeniedException.getMessage());
+	        	    });
+	          })
+	          .httpBasic(withDefaults())
+	          .build();
+	}
+	  
+//    @Order(5)
 //    @Bean
-//    public SecurityFilterChain registerSecurityFilterChain(HttpSecurity http) throws Exception {
-//        return http
-//        	.securityMatcher("/sign-up")
-//            .csrf(AbstractHttpConfigurer::disable)
-//            .authorizeHttpRequests(auth -> auth
-//                .requestMatchers("/sign-up").permitAll()
-//            )
-//            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//            .exceptionHandling(ex -> {
-//            	log.error("ERROR sign-up" + ex.toString());
-//                ex.authenticationEntryPoint((request, response, authException) ->
-//                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
-//            })
-//            .build();
+//    public SecurityFilterChain refreshTokenSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
+//        return httpSecurity
+//        		.securityMatcher("/refresh-token")
+//        		.csrf(AbstractHttpConfigurer::disable)
+//        		
+//        		.authorizeHttpRequests(auth -> auth
+//        	              .requestMatchers("/refresh-token").permitAll()  // Allow access to sign-up
+//        	              .anyRequest().authenticated()  // Other requests need to be authenticated
+//        	          )
+//        		.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
+////                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+//                .addFilterBefore(new JwtRefreshTokenFilter(rsaKeyRecord, jwtTokenUtils, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
+//        		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//                .exceptionHandling(ex -> {
+//                    log.error("[SecurityConfig:refreshTokenSecurityFilterChain] Exception due to :{}",ex);
+//                    ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//                    ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+//                })
+//                .httpBasic(withDefaults())
+//                .build();
 //    }    
-
-
-    @Order(4)
-    @Bean
-    public SecurityFilterChain refreshTokenSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
-        return httpSecurity
-        		.securityMatcher("/refresh-token")
-        		.csrf(AbstractHttpConfigurer::disable)
-        		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        		.authorizeHttpRequests(auth -> auth
-        	              .requestMatchers("/refresh-token").permitAll()  // Allow access to sign-up
-        	              .anyRequest().authenticated()  // Other requests need to be authenticated
-        	          )
-//                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                //.addFilterBefore(new JwtRefreshTokenFilter(rsaKeyRecord, jwtTokenUtils, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(ex -> {
-                    log.error("[SecurityConfig:refreshTokenSecurityFilterChain] Exception due to :{}",ex);
-                    ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
-                    ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
-                })
-                .httpBasic(withDefaults())
-                .build();
-    }    
   
 
     /**
      * Logout security filter chain
      */
-    @Order(5)
+    @Order(6)
     @Bean
     public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -265,7 +256,7 @@ public class SecurityConfig {
             .build();
     }
 	  		
-	  @Order(6)
+	  @Order(7)
 	  @Bean
 	  public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
 		  return http
@@ -277,6 +268,38 @@ public class SecurityConfig {
 	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 	       .build();
 	  }	
+
+	  @Order(8)
+	  @Bean
+	  public SecurityFilterChain publicSecurityFilterChain1(HttpSecurity http) throws Exception {
+		  return http
+	  		.csrf(AbstractHttpConfigurer::disable)
+	  		.securityMatcher("/free/refresh-user")
+	        .authorizeHttpRequests((auth) -> {
+	          	auth.requestMatchers("/free/refresh-user").permitAll();
+	  		})
+	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+	       .build();
+	  }		  
+	  
+	  
+//	  @Order(7)
+//	  @Bean
+//	  public SecurityFilterChain publicSecurityFilterChain1(HttpSecurity http) throws Exception {
+//	      return http
+//	          .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for simplicity in development
+//	          .headers(headers -> headers.httpStrictTransportSecurity().disable()) // Disable HSTS
+//	          .requiresChannel(channel -> channel.anyRequest().requiresInsecure()) // Allow HTTP requests
+//	          .securityMatcher("/free/refresh-user") // Apply to this specific matcher
+//	          .authorizeHttpRequests(auth -> auth
+//	              .requestMatchers("/free/refresh-user").permitAll() // Allow unrestricted access to the endpoint
+//	          )
+//	          .sessionManagement(session -> session
+//	              .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Stateless session management
+//	          )
+//	          .build();
+//	  }
+
 
   
     @Bean
@@ -474,3 +497,58 @@ public class SecurityConfig {
 //				.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
 //            .build();
 //}	  
+
+
+//@Order(2)
+//@Bean
+//public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+//  return httpSecurity
+////  		.csrf(AbstractHttpConfigurer::disable)
+////          .securityMatcher("/login/**")
+//          .securityMatcher("/login")
+////          .securityMatcher(new AntPathRequestMatcher("/login"))
+//          .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
+//          .userDetailsService(userInfoManagerConfig)
+//          .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//          .exceptionHandling(ex -> {
+//          	log.error("ERROR LOGIN" + ex.toString());
+//              ex.authenticationEntryPoint((request, response, authException) ->
+//                      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
+//          })
+//          .httpBasic(Customizer.withDefaults())
+//          .build();
+//}
+
+//@Order(2)
+//@Bean
+//public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+//  return httpSecurity
+//          .securityMatcher("/login")
+//          .authorizeHttpRequests(auth -> auth
+////          		.requestMatchers("/login").permitAll()
+//          		.requestMatchers(HttpMethod.GET, "/login").permitAll()
+//          )
+//          .userDetailsService(userInfoManagerConfig)
+//          .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//          .httpBasic(withDefaults())
+//          .build();
+//}
+
+
+//@Order(3)
+//@Bean
+//public SecurityFilterChain registerSecurityFilterChain(HttpSecurity http) throws Exception {
+//  return http
+//  	.securityMatcher("/sign-up")
+//      .csrf(AbstractHttpConfigurer::disable)
+//      .authorizeHttpRequests(auth -> auth
+//          .requestMatchers("/sign-up").permitAll()
+//      )
+//      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//      .exceptionHandling(ex -> {
+//      	log.error("ERROR sign-up" + ex.toString());
+//          ex.authenticationEntryPoint((request, response, authException) ->
+//                  response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
+//      })
+//      .build();
+//}    

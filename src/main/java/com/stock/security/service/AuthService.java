@@ -1,6 +1,7 @@
 package com.stock.security.service;
 
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -12,6 +13,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.stock.model.UserSubscription;
+import com.stock.repositories.UserSubscriptionsRepository;
 import com.stock.security.dto.AuthResponseDto;
 import com.stock.security.dto.TokenType;
 import com.stock.security.dto.UserRegistrationDto;
@@ -39,10 +42,14 @@ public class AuthService {
     private final UserInfoMapper userInfoMapper;
     private final LogoutHandlerService logoutHandlerService;
     private final CookieService cookieService;
+    private final UserSubscriptionsRepository userSubscriptionsRepository;
     
     
 	 /**
 	  * Registering a New User
+	  * 1. a new user created, 
+	  * 2. an access and refresh tokens generated
+	  * 3. a trial subscription created
 	  * @param userRegistrationDto
 	  * @param httpServletResponse
 	  * @return
@@ -70,8 +77,12 @@ public class AuthService {
 				log.info("#7 Refresh Token: " + refreshToken);
 				
 				//Let's save the refreshToken as well
-				saveUserRefreshToken(userDetailsEntity, refreshToken);
-				creatRefreshTokenCookie(response, refreshToken);
+				createUserRefreshToken(userDetailsEntity, refreshToken);
+				createRefreshTokenCookie(response, refreshToken);
+				
+				/* User gets trial access for three days  */
+				UserSubscription subscription = this.createUserTrialSubscription(savedUserDetails.getId(), 3);
+				String sSubscriptionEndDate = subscription.getSubscriptionEndDate().toString();
 
 				log.info("[AuthService:registerUser] User:{} Successfully registered", savedUserDetails.getUserName());
 				
@@ -86,6 +97,7 @@ public class AuthService {
 						.id(savedUserDetails.getId())
 						.userName(savedUserDetails.getUserName())
 						.tokenType(TokenType.Bearer)
+						.subscripitonEndDate(sSubscriptionEndDate)
 						.build();
 
 			} catch (Exception e) {
@@ -94,13 +106,37 @@ public class AuthService {
 			}
 		}    
     
-    
 		
+		/** 
+		 * Creating a trial subscription for a new user for n days
+		 * @param id - user id gotten from db
+		 * @param days - numbers of subscription days
+		 * 
+		 * return User Subscription
+		 */
+		public UserSubscription createUserTrialSubscription(Long userId, int days) {
+			
+			UserSubscription s = new UserSubscription();
+			s.setUserId(userId);
+			
+			// Get the current date
+	        LocalDate currentDate = LocalDate.now();
+	        LocalDate endDate = currentDate.plusDays(days);
+	        s.setSubscriptionEndDate(endDate);
+	        
+			return userSubscriptionsRepository.save(s);
+		}
+		
+		
+		/**
+		 * Login Service
+		 * @param authentication
+		 * @param response
+		 * @return
+		 */
 		public AuthResponseDto getJwtTokensAfterAuthentication(Authentication authentication, 
 		        HttpServletResponse response) {
-
 		    log.info("#09 AuthResponseDto getJwtTokensAfterAuthentication: " + authentication.getName());
-		   
 		    try {
 		        // Getting user authentication data from the database
 		        var userInfoEntity = userInfoRepo.findByEmailId(authentication.getName())
@@ -116,10 +152,21 @@ public class AuthService {
 		        String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
 
 		        // Save the refresh token
-		        saveUserRefreshToken(userInfoEntity, refreshToken);
-
+		        // TODO: Delete old refresh token or simply update it
+		        updateUserRefreshToken(userInfoEntity, refreshToken);
+		        
+		        /* Get User Subscription end date*/
+		        UserSubscription subscription = userSubscriptionsRepository.findByUserId(userInfoEntity.getId()).get(0);
+		        String subscriptionEndDate = subscription.getSubscriptionEndDate().toString();
+		        if(subscription == null) {
+		        	LocalDate currentDate = LocalDate.now();
+		        	subscriptionEndDate = currentDate.toString();
+		        }
+		        
+		        log.info("#30 USER SUBSCRITION: ", subscriptionEndDate);
+		        
 		        // Create cookies
-		        creatRefreshTokenCookie(response, refreshToken);
+		        createRefreshTokenCookie(response, refreshToken);
 		        
 		        log.info("[AuthService:userSignInAuth] Access token for user:{}, has been generated", userInfoEntity.getUserName());
 		        return AuthResponseDto.builder()
@@ -128,6 +175,7 @@ public class AuthService {
 		                .id(userInfoEntity.getId())
 		                .userName(userInfoEntity.getUserName())
 		                .tokenType(TokenType.Bearer)
+		                .subscripitonEndDate(subscriptionEndDate)
 		                .build();
 		        
 		    } catch (ResponseStatusException ex) {
@@ -141,12 +189,15 @@ public class AuthService {
 		    }
 		}
 
-		
+	/**
+	 * Wrking copy of Login
+	 * @param authentication
+	 * @param response
+	 * @return
+	 */
     public AuthResponseDto getJwtTokensAfterAuthenticationOriginal(Authentication authentication, 
     		HttpServletResponse response) {
-    	
     	log.info("#09 AuthResponseDto getJwtTokensAfterAuthentication: " + authentication.getName());
-       
     	try {
            
         	/* Getting user authentication data form the db. We need a user name because we are using email for authentication */
@@ -159,13 +210,12 @@ public class AuthService {
         	log.info("#20 USER PASSWORD: " + userInfoEntity.getPassword());
         	
             String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
-            String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication); //TODO: Remove AAA
-
+            String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
             //Let's save the refreshToken as well
-            saveUserRefreshToken(userInfoEntity, refreshToken);
+            updateUserRefreshToken(userInfoEntity, refreshToken);
            
             //Creating cookies
-            creatRefreshTokenCookie(response, refreshToken);
+            createRefreshTokenCookie(response, refreshToken);
             
             log.info("[AuthService:userSignInAuth] Access token for user:{}, has been generated",userInfoEntity.getUserName());
             return  AuthResponseDto.builder()
@@ -185,11 +235,11 @@ public class AuthService {
     
     
     /**
-     * Saving Refresh Token into Database
+     * Create a Refresh Token in Database during a User sign-up
      * @param userInfoEntity
      * @param refreshToken
      */
-	private void saveUserRefreshToken(UserInfoEntity userInfoEntity, String refreshToken) {
+	private void createUserRefreshToken(UserInfoEntity userInfoEntity, String refreshToken) {
 		var refreshTokenEntity = RefreshTokenEntity.builder()
 				.user(userInfoEntity)
 				.refreshToken(refreshToken)
@@ -200,13 +250,38 @@ public class AuthService {
 	
 	
 	/**
+     * Update a Refresh Token in the Database during a User login or reentering 
+     * into a browser when access token exists (live or expired)
+     * @param userInfoEntity
+     * @param refreshToken
+     */
+	private void updateUserRefreshToken(UserInfoEntity userInfoEntity, String refreshToken) {
+		
+		/* Find existing user refresh token by user id */
+		RefreshTokenEntity existingRefreshToken = refreshTokenRepo.findByUserId(userInfoEntity.getId()).get(0);
+		
+		if (existingRefreshToken == null) {
+			
+			var refreshTokenEntity = RefreshTokenEntity.builder()
+					.user(userInfoEntity)
+					.refreshToken(refreshToken)
+					.revoked(false).build();
+			refreshTokenRepo.save(refreshTokenEntity);
+		}
+		/* Update existing and save */
+		existingRefreshToken.setRefreshToken(refreshToken);
+		refreshTokenRepo.save(existingRefreshToken);
+	}	
+	
+	
+	/**
 	 * https://dzone.com/articles/how-to-use-cookies-in-spring-boot
 	 * Saving Refresh token as a cookie
 	 * @param response
 	 * @param refreshToken
 	 * @return can be void
 	 */
-	private Cookie creatRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+	private Cookie createRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
 
 		Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
 		refreshTokenCookie.setHttpOnly(true);  // change to false in prod
@@ -228,10 +303,57 @@ public class AuthService {
     }
 	
 	
+	
+	
+	/***
+	 * This publicly open point is used to refresh user access token from existing refresh token which is in cookies.
+	 * @param refreshToken
+	 * @return 
+	 */
+	public AuthResponseDto getAccessTokenFromRequestWithCookies(String refreshToken, HttpServletResponse response) {
+		
+		log.info("#4 Refresh Token in: ", refreshToken);
+		
+	    try {
+	        //Find refreshToken from database and should not be revoked : Same thing can be done through filter.  
+	        var refreshTokenEntity = refreshTokenRepo.findByRefreshToken(refreshToken)
+	                .filter(tokens-> !tokens.isRevoked())
+	                .orElseThrow(()-> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Refresh token revoked"));
+	
+	        UserInfoEntity userInfoEntity = refreshTokenEntity.getUser();
+	        
+	        //Now create the Authentication object
+	        Authentication authentication =  createAuthenticationObject(userInfoEntity);
+	
+	        //Use the authentication object to generate new accessToken as the Authentication object that we will have may not contain correct role. 
+	        String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
+	        
+	        /*  */
+	        String newRefreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
+	        updateUserRefreshToken(userInfoEntity, newRefreshToken);
+	        createRefreshTokenCookie(response, newRefreshToken);
+	
+	        return  AuthResponseDto.builder()
+	                .accessToken(accessToken)
+	                .accessTokenExpiry(5 * 60)
+	                .id(userInfoEntity.getId())
+	                .userName(userInfoEntity.getUserName())
+	                .tokenType(TokenType.Bearer)
+	                .build();
+	        
+	    } catch (Exception e) {
+	        log.error("[AuthService:getAccessTokenFromRequestWithCookies] Exception while refreshing the user due to: {}", "Something wrong with refresh token");
+	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Problem with refresh token. Make a new login.");
+		}
+        
+    }
+	
+	
+	
 	/**
 	 * TODO: This needs to be changed that a new access token will be generated using refresh token present in cookies
 	 * regardless of expiration. Request came in from the same browser then it should be generated.
-	 * Thus, incoming parameter shoud be a refresh token from cookies.
+	 * Thus, incoming parameter should be a refresh token from cookies.
 	 * @param authorizationHeader
 	 * @return
 	 */
@@ -373,8 +495,8 @@ public class AuthService {
 				log.info("#6 REGISTERED USER ID IS: " + savedUserDetails.getId());
 				log.info("#7 Refresh Token: " + refreshToken);
 				
-				saveUserRefreshToken(userDetailsEntity, refreshToken);
-				creatRefreshTokenCookie(response, refreshToken);
+				createUserRefreshToken(userDetailsEntity, refreshToken);
+				createRefreshTokenCookie(response, refreshToken);
 
 				log.info("[AuthService:registerUser] User:{} Successfully registered", savedUserDetails.getUserName());
 				

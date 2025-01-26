@@ -39,11 +39,16 @@ Generating 2,048 bit RSA key pair and self-signed certificate (SHA384withRSA) wi
 
 ```
 
-### Disabling SSH for development
+### ###Setting application to run SSL for local development
 ```
-1. Comment ssl section in application.xml file
-2. Change https to http
- security:
-    cors: https://localhost:5004 
+1. 
+2. 
 
 ```
+
+
+### Refresh Token Management
+Refresh token lives 1 week. After one week a user must relogin upon access token expiration. 
+User has only one refresh token record and every time when a user refresh token expired it has to be renewed (updated)
+Refresh token has to be checked on revocation field. Both refresh and access token should be invalidated when revocation date was met.
+Revocation date should be checked every time when the access token refreshed. It shuld be appropriate message.

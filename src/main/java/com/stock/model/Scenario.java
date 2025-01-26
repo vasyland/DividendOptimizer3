@@ -21,16 +21,22 @@ public class Scenario implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name="id", nullable=false, updatable=true)
 	private Long id;
+	
 	@Column(name="user_id", nullable=false)
 	private Long userId;
+	
 	@Column(name = "scenario_name")
 	private String scenarioName;
+	
 	@Column(name="invested_amount")
 	private BigDecimal investedAmount;
+	
 	@Column(name = "description")
 	private String description;
+	
 	@Column(name = "created_on")
 	private LocalDateTime createdOn;
+	
 	@Column(name = "updated_on")
 	private LocalDateTime updatedOn;
 	

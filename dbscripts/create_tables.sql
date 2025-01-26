@@ -1,13 +1,10 @@
 
-CREATE TABLE `iwmdev`.`rude_test` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `nameit` VARCHAR(45) NOT NULL,
-  `description` VARCHAR(45) NULL,
-  PRIMARY KEY (`id`));
-
 USE golem;
 
--- December 23, 2024
+use iwmdev;
+-- Last Updated January 26, 20
+DROP TABLE `user_subscription_seq`;
+DROP TABLE `user_subscription`;
 DROP TABLE `refresh_tokens_seq`;
 DROP TABLE `refresh_tokens`;
 DROP TABLE `user_info_seq`;
@@ -15,6 +12,7 @@ DROP TABLE `user_info`;
 
 SHOW TABLES LIKE 'user_info_seq';
 
+-- User 
 CREATE TABLE `user_info` (
   `id` bigint NOT NULL,
   `email_id` varchar(60) NOT NULL COMMENT 'User login credentials',
@@ -30,8 +28,9 @@ CREATE TABLE `user_info_seq` (
   `next_val` BIGINT NOT NULL
 );
 INSERT INTO user_info_seq (next_val) VALUES (1);
+commit;
 
-
+-- User Refresh Tokens 
 CREATE TABLE `refresh_tokens` (
   `id` bigint NOT NULL,
   `user_id` bigint DEFAULT NULL,
@@ -46,8 +45,31 @@ CREATE TABLE `refresh_tokens_seq` (
   `next_val` BIGINT NOT NULL
 );
 INSERT INTO refresh_tokens_seq (next_val) VALUES (1);
+commit;
 
 
+-- User Subscriptions
+CREATE TABLE `user_subscription` (
+  `id` bigint NOT NULL,
+  `user_id` bigint DEFAULT NULL,
+  `subscription_end_date` datetime,
+  `created_on` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_on` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `FK_user_id` (`user_id`),
+  CONSTRAINT `FK_user_info_id_subscription` FOREIGN KEY (`user_id`) REFERENCES `user_info` (`id`)
+);
+
+CREATE TABLE `user_subscription_seq` (
+  `next_val` BIGINT NOT NULL
+);
+INSERT INTO user_subscription_seq (next_val) VALUES (1);
+commit;
+
+
+
+
+--  These tables are not hooked to user info table 
 CREATE TABLE `volatility_date` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `day_date` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -171,3 +193,7 @@ CREATE TABLE `volatility_date_seq` (
   `next_val` bigint DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 -------------------------------------------------------------------------
+
+
+
+

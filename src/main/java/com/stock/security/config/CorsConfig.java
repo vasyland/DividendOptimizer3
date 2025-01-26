@@ -18,7 +18,6 @@ public class CorsConfig {
 	@Bean
     public CorsFilter corsFilter() {
 //        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        
         CorsConfiguration config = new CorsConfiguration();
         
         // Allow the origin from which the request is coming
