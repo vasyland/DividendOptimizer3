@@ -10,8 +10,9 @@ import org.springframework.context.annotation.Bean;
 
 import com.stock.security.config.RSAKeyRecord;
 
-@SpringBootApplication
+
 @EnableConfigurationProperties(RSAKeyRecord.class)
+@SpringBootApplication(scanBasePackages = {"com.stock.", "com.stock.security"})
 public class DividendOptimizer3Application {
 
 	public static void main(String[] args) {

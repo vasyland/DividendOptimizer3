@@ -1,16 +1,26 @@
 package com.stock.security.service;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Service;
 
+import com.stock.security.config.RSAKeyRecord;
+import com.stock.security.config.jwt.JwtTokenUtils;
 import com.stock.security.dto.TokenType;
+import com.stock.security.entity.RefreshTokenEntity;
+import com.stock.security.entity.UserInfoEntity;
 import com.stock.security.repo.RefreshTokenRepo;
+import com.stock.security.repo.UserInfoRepo;
 import com.stock.security.util.CookieService;
 
 import jakarta.servlet.http.Cookie;
@@ -33,11 +43,27 @@ public class LogoutHandlerService implements LogoutHandler {
 
     private final RefreshTokenRepo refreshTokenRepo;
     private final CookieService cookieService;
+    private final UserInfoRepo userInfoRepo;
 
+    private final RSAKeyRecord rsaKeyRecord;
+    private final JwtTokenUtils jwtTokenUtils;
     
-    public void origLogout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+    @Override
+    public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
 
     	log.info("LOGOUT Handler: ");
+    	
+    	log.info("\n LOGOUT HEADERS");
+    	Enumeration headerNames = request.getHeaderNames();
+    	while(headerNames.hasMoreElements()) {
+    		
+    		String headerName = (String) headerNames.nextElement();
+    		log.info(request.getHeader(headerName));
+    	}
+    	log.info("REMOTE HOST: " + request.getRemoteHost());
+    	log.info("REMOTE USER: " + request.getRemoteUser());
+    	log.info("END OF LOGOUT HEADERS \n");
+    	
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         log.info("LOGOUT Handler authHeader = " + authHeader);
@@ -46,23 +72,91 @@ public class LogoutHandlerService implements LogoutHandler {
             return;
         }
 
-        final String refreshToken = authHeader.substring(7);
+        String accessToken = authHeader.substring(7);
 
-        var storedRefreshToken = refreshTokenRepo.findByRefreshToken(refreshToken)
-                .map(token->{
-                    token.setRevoked(true);
-                    refreshTokenRepo.save(token);
-                    return token;
-                })
-                .orElse(null);
+        log.info("[LogoutHandlerService => accessToken] " + accessToken);
+        JwtDecoder jwtDecoder =  NimbusJwtDecoder.withPublicKey(rsaKeyRecord.rsaPublicKey()).build();
+        final Jwt jwtToken = jwtDecoder.decode(accessToken);
+        String userEmail = jwtTokenUtils.getUserName(jwtToken);
+        
+        log.info("jwtTokenUtils.getUserName() = " + userEmail);
+        
+        
+        /** Here add refresh token removal*/
+        
+        // Find user id using email
+        UserInfoEntity userInfoEntity = userInfoRepo.findByEmailId(userEmail).get();
+        if(userInfoEntity != null) {
+        	log.info("Found User ID: " + userInfoEntity.getId());
+        	
+        	List<RefreshTokenEntity> refreshTokens = refreshTokenRepo.findByUserId(userInfoEntity.getId());
+        	RefreshTokenEntity currentRefreshToken = refreshTokens.getFirst();
+        	currentRefreshToken.setRefreshToken("Updated and not valid");
+        	refreshTokenRepo.deleteAll(refreshTokens);
+        	refreshTokenRepo.save(currentRefreshToken);
+        	
+        }
+     // Clear all cookies
+        clearCookies(request, response);
+        
+        
+     // Return a success response
+        response.setStatus(HttpServletResponse.SC_OK);
+        try {
+			response.getWriter().write("{\"message\": \"Logout successful from LogoutHandlerService\"}");
+			response.getWriter().flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+        
+//        var storedRefreshToken = refreshTokenRepo.findByRefreshToken(accessToken)
+//                .map(token->{
+//                    token.setRevoked(true);
+//                    refreshTokenRepo.save(token);
+//                    return token;
+//                })
+//                .orElse(null);
     }
     
     
     /**
      * 
+     * @param response
      */
-    @Override
-    public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+    private void clearHeaders(HttpServletResponse response) {
+        // Remove sensitive headers from the response
+        response.setHeader("Authorization", null);
+        response.setHeader("Set-Cookie", null);
+    }
+    
+    
+    /**
+     * 
+     * @param request
+     * @param response
+     */
+    private void clearCookies(HttpServletRequest request, HttpServletResponse response) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                Cookie clearedCookie = new Cookie(cookie.getName(), "");
+                clearedCookie.setMaxAge(0);
+                clearedCookie.setPath("/");
+                clearedCookie.setHttpOnly(true);
+                clearedCookie.setSecure(true); // Set secure if using HTTPS
+                response.addCookie(clearedCookie);
+            }
+        }
+    }    
+    
+    
+    
+    /**
+     * 
+     */
+    //@Override
+    public void logoutMine(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
 
         /** We need to get a refresh token from the request in order revoke it in the database */
         Cookie[] cookies = request.getCookies();

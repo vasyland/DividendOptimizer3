@@ -86,6 +86,12 @@ public class AuthController {
     }
     
     
+  //@PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
+//    @PostMapping ("/logout")
+//    public ResponseEntity<?> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, HttpServletRequest request, HttpServletResponse response){
+//      return ResponseEntity.ok(logoutHandlerService.logout(request, response, authorizationHeader));
+//    }
+    
     @PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
     @PostMapping ("/log-out")
     public ResponseEntity<?> getOut(HttpServletRequest request, HttpServletResponse response){
@@ -100,7 +106,19 @@ public class AuthController {
         return ResponseEntity.ok(authService.logoutUser(null, request, response));
     }
     
-   
+    @PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
+    @PostMapping ("/log-out0")
+    public ResponseEntity<?> getOut0(HttpServletRequest request, HttpServletResponse response){
+    	
+    	 Cookie[] cookies = request.getCookies();
+         if (cookies != null) {
+             String cook =  Arrays.stream(cookies)
+                     .map(c -> c.getName() + "=" + c.getValue()).collect(Collectors.joining(", "));
+             log.info("#1 Logout Cookies: " + cook);
+         }
+         
+        return ResponseEntity.ok(authService.logoutUser(null, request, response));
+    }   
     
     /**
      * Getting a new access token based on existing refresh token when refresh token present in browser
@@ -199,8 +217,4 @@ public class AuthController {
 //  return ResponseEntity.ok(authService.logoutUser(authorizationHeader, request, response));
 //}
 
-//@PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
-//@PostMapping ("/logout")
-//public ResponseEntity<?> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, HttpServletResponse response){
-//  return ResponseEntity.ok(logoutHandlerService.logout(response, authorizationHeader));
-//}
+

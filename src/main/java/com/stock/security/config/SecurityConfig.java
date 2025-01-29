@@ -42,9 +42,11 @@ import com.stock.security.config.jwt.JwtTokenUtils;
 import com.stock.security.config.user.UserInfoManagerConfig;
 import com.stock.security.repo.RefreshTokenRepo;
 import com.stock.security.service.CustomLogoutHandler;
+import com.stock.security.service.CustomLogoutSuccessHandler;
 import com.stock.security.service.LogoutHandlerService;
 import com.stock.security.util.CookieService;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -72,11 +74,13 @@ public class SecurityConfig {
 	private final RSAKeyRecord rsaKeyRecord;
 	private final JwtTokenUtils jwtTokenUtils;
 	private final RefreshTokenRepo refreshTokenRepo;
-//	private final LogoutHandlerService logoutHandlerService;
-	private final CookieService cookieService;
+	private final LogoutHandlerService logoutHandlerService;
+
+	private final JwtAccessTokenFilter jwtAccessTokenFilter;
 	
 	@Autowired
     private final CustomLogoutHandler customLogoutHandler;
+	
 	
 	/** 
 	 * sign-in is because Spring Boot has its own login somewhere 
@@ -231,30 +235,53 @@ public class SecurityConfig {
      */
     @Order(6)
     @Bean
-    public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity http) throws Exception {
-        return http
-            .securityMatcher("/logout")  // Applies to logout requests
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
-            .logout(logout -> logout
-                .addLogoutHandler(customLogoutHandler)
-                .logoutUrl("/logout")
-                .invalidateHttpSession(true)
-                .logoutSuccessHandler((request, response, authentication) -> {
-                    log.info("Logout successful. Clearing security context.");
-                    SecurityContextHolder.clearContext();
+    public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+        return httpSecurity
+                .securityMatcher(new AntPathRequestMatcher("/logout/**"))
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord,jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .addLogoutHandler(logoutHandlerService)
+                        .logoutSuccessHandler(((request, response, authentication) -> SecurityContextHolder.clearContext()))
+                )
+                .exceptionHandling(ex -> {
+                    log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to :{}",ex);
+                    ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+                    ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
                 })
-            )
-            .exceptionHandling(ex -> {
-                log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to: {}", ex);
-                ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
-                ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
-            })
-            .build();
+                .build();
     }
+
+ 
+//    @Bean
+//    public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity http) throws Exception {
+//        return http
+//            .securityMatcher("/logout")  // Applies to logout requests
+//            .csrf(AbstractHttpConfigurer::disable)
+//            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+//            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+//            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//            .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+//            .logout(logout -> logout
+//                .addLogoutHandler(customLogoutHandler)
+//                .logoutUrl("/logout")
+//                .invalidateHttpSession(true)
+//                .logoutSuccessHandler((request, response, authentication) -> {
+//                    log.info("Logout successful. Clearing security context.");
+//                    SecurityContextHolder.clearContext();
+//                })
+//            )
+//            .exceptionHandling(ex -> {
+//                log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to: {}", ex);
+//                ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//                ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+//            })
+//            .build();
+//    }
 	  		
 	  @Order(7)
 	  @Bean
