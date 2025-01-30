@@ -240,13 +240,12 @@ public class SecurityConfig {
                 .securityMatcher(new AntPathRequestMatcher("/logout/**"))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+               
                 .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord,jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .addLogoutHandler(logoutHandlerService)
-                        .logoutSuccessHandler(((request, response, authentication) -> SecurityContextHolder.clearContext()))
+                        
                 )
                 .exceptionHandling(ex -> {
                     log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to :{}",ex);
@@ -256,6 +255,10 @@ public class SecurityConfig {
                 .build();
     }
 
+//    .logoutSuccessHandler(((request, response, authentication) -> SecurityContextHolder.clearContext()))
+//    .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
+//    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))    
+    
  
 //    @Bean
 //    public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity http) throws Exception {
