@@ -29,7 +29,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Thus filter is required during loguot process using access token, but access token can be expired
+ * Thus filter is required during logout process using access token, but access token can be expired
  * We need to validate access token and regardless it is expired or not, and then to validate
  * 
  */

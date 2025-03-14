@@ -50,14 +50,24 @@ public class JwtAccessTokenFilter extends OncePerRequestFilter {
 
     private final RSAKeyRecord rsaKeyRecord;
     private final JwtTokenUtils jwtTokenUtils;
+    
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-
+    	
+    	// Get request URI
+        String requestURI = request.getRequestURI();
+        
+    	// Skip JWT filter for refresh token endpoint
+        if (requestURI.equals("/free/refresh-user") || requestURI.equals("/sign-up") || requestURI.equals("/all-cookies")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+    	
+    	
         try{
             log.info("[JwtAccessTokenFilter:doFilterInternal] :: Started ");
-
             log.info("[JwtAccessTokenFilter:doFilterInternal]Filtering the Http Request:{}",request.getRequestURI());
 
             final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -92,11 +102,16 @@ public class JwtAccessTokenFilter extends OncePerRequestFilter {
                 }
             }
             log.info("[JwtAccessTokenFilter:doFilterInternal] Completed");
-
             filterChain.doFilter(request,response);
-        }catch (JwtValidationException jwtValidationException){
-            log.error("[JwtAccessTokenFilter:doFilterInternal] Exception due to :{}",jwtValidationException.getMessage());
-            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE,jwtValidationException.getMessage());
+            
+        } catch (JwtValidationException jwtValidationException) {
+            log.error("[JwtAccessTokenFilter:doFilterInternal] JWT Validation Failed: {}", jwtValidationException.getMessage());
+
+            // Set response status and JSON response instead of throwing an exception
+            response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"JWT Expired\", \"message\": \"" + jwtValidationException.getMessage() + "\"}");
+            response.getWriter().flush();
         }
     }
 }

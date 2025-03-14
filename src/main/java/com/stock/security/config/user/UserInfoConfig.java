@@ -9,7 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.stock.security.entity.UserInfoEntity;
+import com.stock.security.entity.UserInfo;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +24,7 @@ public class UserInfoConfig implements UserDetails {
 
 	private static final long serialVersionUID = 1L;
 	
-	private final UserInfoEntity userInfoEntity;
+	private final UserInfo userInfoEntity;
     
 	
 	/**

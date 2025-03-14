@@ -26,6 +26,8 @@ import org.springframework.security.oauth2.server.resource.web.access.BearerToke
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
@@ -38,6 +40,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import com.stock.security.config.jwt.JwtAccessTokenFilter;
 import com.stock.security.config.jwt.JwtLogoutFilter;
 import com.stock.security.config.jwt.JwtRefreshTokenFilter;
+import com.stock.security.config.jwt.JwtRefreshUserFilter;
 import com.stock.security.config.jwt.JwtTokenUtils;
 import com.stock.security.config.user.UserInfoManagerConfig;
 import com.stock.security.repo.RefreshTokenRepo;
@@ -73,6 +76,7 @@ public class SecurityConfig {
 	private final UserInfoManagerConfig userInfoManagerConfig;
 	private final RSAKeyRecord rsaKeyRecord;
 	private final JwtTokenUtils jwtTokenUtils;
+	private final CookieService cookieService;
 	private final RefreshTokenRepo refreshTokenRepo;
 	private final LogoutHandlerService logoutHandlerService;
 
@@ -118,7 +122,25 @@ public class SecurityConfig {
         return new NoPopupBasicAuthenticationEntryPoint();
     }
 
+	
 	@Order(2)
+	@Bean
+	public SecurityFilterChain registerSecurityFilterChain(HttpSecurity http) throws Exception {
+		return http
+				.securityMatcher("/sign-up")
+				.csrf(AbstractHttpConfigurer::disable)
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/sign-up").permitAll())
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.exceptionHandling(ex -> {
+					log.error("ERROR sign-up" + ex.toString());
+					ex.authenticationEntryPoint((request, response, authException) -> response
+							.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
+				})
+				.build();
+	}    	
+	
+	
+	@Order(3)
     @Bean
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -132,7 +154,6 @@ public class SecurityConfig {
 	  			auth.requestMatchers(HttpMethod.POST, "/api/scenario/add"); 
 	  			auth.anyRequest().authenticated();
             })
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> {
                 log.error("[SecurityConfig:apiSecurityFilterChain] Exception due to: {}", ex);
                 ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
@@ -143,28 +164,47 @@ public class SecurityConfig {
             .build();
     }
     
-	
-	  @Order(3)
-	    @Bean
-	    public SecurityFilterChain registerSecurityFilterChain(HttpSecurity http) throws Exception {
-	        return http
-	        	.securityMatcher("/sign-up")
-	            .csrf(AbstractHttpConfigurer::disable)
-	            .authorizeHttpRequests(auth -> auth
-	                .requestMatchers("/sign-up").permitAll()
-	            )
-	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-	            .exceptionHandling(ex -> {
-	            	log.error("ERROR sign-up" + ex.toString());
-	                ex.authenticationEntryPoint((request, response, authException) ->
-	                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
-	            })
-	            .build();
-	    }    	
-	
-	
-  
+//  .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
 	  @Order(4)
+	  @Bean
+	  public SecurityFilterChain refreshUserSecurityFilterChain(HttpSecurity http) throws Exception {
+		  return http
+	  		.csrf(AbstractHttpConfigurer::disable)
+	  		.securityMatcher("/free/refresh-user")
+	        .authorizeHttpRequests(auth -> 	auth.requestMatchers("/free/refresh-user").permitAll())
+	        .addFilterBefore(new JwtRefreshUserFilter(rsaKeyRecord, jwtTokenUtils), SecurityContextHolderFilter.class)
+	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+	       .build();
+	  }		  
+  
+
+	    /**
+	     * Logout security filter chain
+	     */
+	    @Order(5)
+	    @Bean
+	    public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+	        return httpSecurity
+	                .securityMatcher(new AntPathRequestMatcher("/logout/**"))
+	                .csrf(AbstractHttpConfigurer::disable)
+	                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+	               
+	                .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord,jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+	                .logout(logout -> logout
+	                        .logoutUrl("/logout")
+	                        .addLogoutHandler(logoutHandlerService)
+	                        
+	                )
+	                .exceptionHandling(ex -> {
+	                    log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to :{}",ex);
+	                    ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+	                    ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+	                })
+	                .build();
+	    }	  
+	  
+	  @Order(6)
 	    @Bean
 	    public SecurityFilterChain allCookiesSecurityFilterChain(HttpSecurity http) throws Exception {
 	        return http
@@ -180,158 +220,10 @@ public class SecurityConfig {
 	                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
 	            })
 	            .build();
-	    }    	
-
-	  
-	//Original
-	@Order(5)
-	@Bean
-	public SecurityFilterChain refreshTokenSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
-	  return httpSecurity
-	  		.csrf(AbstractHttpConfigurer::disable)
-	  		.securityMatcher("/refresh-token")
-	          .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-	          .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-	          .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-	          .addFilterBefore(new JwtRefreshTokenFilter(rsaKeyRecord,jwtTokenUtils,refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
-	          .exceptionHandling(ex -> {
-	        	  ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
-	        	  ex.accessDeniedHandler((request, response, accessDeniedException) -> {
-	        	        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-	        	        response.getWriter().write("Access Denied: " + accessDeniedException.getMessage());
-	        	    });
-	          })
-	          .httpBasic(withDefaults())
-	          .build();
-	}
-	  
-//    @Order(5)
-//    @Bean
-//    public SecurityFilterChain refreshTokenSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
-//        return httpSecurity
-//        		.securityMatcher("/refresh-token")
-//        		.csrf(AbstractHttpConfigurer::disable)
-//        		
-//        		.authorizeHttpRequests(auth -> auth
-//        	              .requestMatchers("/refresh-token").permitAll()  // Allow access to sign-up
-//        	              .anyRequest().authenticated()  // Other requests need to be authenticated
-//        	          )
-//        		.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
-////                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-//                .addFilterBefore(new JwtRefreshTokenFilter(rsaKeyRecord, jwtTokenUtils, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
-//        		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .exceptionHandling(ex -> {
-//                    log.error("[SecurityConfig:refreshTokenSecurityFilterChain] Exception due to :{}",ex);
-//                    ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
-//                    ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
-//                })
-//                .httpBasic(withDefaults())
-//                .build();
-//    }    
-  
-
-    /**
-     * Logout security filter chain
-     */
-    @Order(6)
-    @Bean
-    public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity
-                .securityMatcher(new AntPathRequestMatcher("/logout/**"))
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-               
-                .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord,jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .addLogoutHandler(logoutHandlerService)
-                        
-                )
-                .exceptionHandling(ex -> {
-                    log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to :{}",ex);
-                    ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
-                    ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
-                })
-                .build();
-    }
-
-//    .logoutSuccessHandler(((request, response, authentication) -> SecurityContextHolder.clearContext()))
-//    .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
-//    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))    
-    
- 
-//    @Bean
-//    public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity http) throws Exception {
-//        return http
-//            .securityMatcher("/logout")  // Applies to logout requests
-//            .csrf(AbstractHttpConfigurer::disable)
-//            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-//            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-//            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//            .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
-//            .logout(logout -> logout
-//                .addLogoutHandler(customLogoutHandler)
-//                .logoutUrl("/logout")
-//                .invalidateHttpSession(true)
-//                .logoutSuccessHandler((request, response, authentication) -> {
-//                    log.info("Logout successful. Clearing security context.");
-//                    SecurityContextHolder.clearContext();
-//                })
-//            )
-//            .exceptionHandling(ex -> {
-//                log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to: {}", ex);
-//                ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
-//                ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
-//            })
-//            .build();
-//    }
-	  		
-	  @Order(7)
-	  @Bean
-	  public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
-		  return http
-	  		.csrf(AbstractHttpConfigurer::disable)
-	  		.securityMatcher("/free/**")
-	        .authorizeHttpRequests((auth) -> {
-	          	auth.requestMatchers("/free/*").permitAll();
-	  		})
-	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-	       .build();
-	  }	
-
-	  @Order(8)
-	  @Bean
-	  public SecurityFilterChain publicSecurityFilterChain1(HttpSecurity http) throws Exception {
-		  return http
-	  		.csrf(AbstractHttpConfigurer::disable)
-	  		.securityMatcher("/free/refresh-user")
-	        .authorizeHttpRequests((auth) -> {
-	          	auth.requestMatchers("/free/refresh-user").permitAll();
-	  		})
-	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-	       .build();
-	  }		  
+	    }    		  
 	  
 	  
-//	  @Order(7)
-//	  @Bean
-//	  public SecurityFilterChain publicSecurityFilterChain1(HttpSecurity http) throws Exception {
-//	      return http
-//	          .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for simplicity in development
-//	          .headers(headers -> headers.httpStrictTransportSecurity().disable()) // Disable HSTS
-//	          .requiresChannel(channel -> channel.anyRequest().requiresInsecure()) // Allow HTTP requests
-//	          .securityMatcher("/free/refresh-user") // Apply to this specific matcher
-//	          .authorizeHttpRequests(auth -> auth
-//	              .requestMatchers("/free/refresh-user").permitAll() // Allow unrestricted access to the endpoint
-//	          )
-//	          .sessionManagement(session -> session
-//	              .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Stateless session management
-//	          )
-//	          .build();
-//	  }
-
-
-  
+	  
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -347,11 +239,33 @@ public class SecurityConfig {
         JWK jwk = new RSAKey.Builder(rsaKeyRecord.rsaPublicKey()).privateKey(rsaKeyRecord.rsaPrivateKey()).build();
         JWKSource<SecurityContext> jwkSource = new ImmutableJWKSet<>(new JWKSet(jwk));
         return new NimbusJwtEncoder(jwkSource);
-    }
-
-
-    
+    }    
 }
+
+
+
+////Original
+//@Order(5)
+//@Bean
+//public SecurityFilterChain refreshTokenSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
+//  return httpSecurity
+//  		.csrf(AbstractHttpConfigurer::disable)
+//  		.securityMatcher("/refresh-token")
+//          .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+//          .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+//          .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+////          .addFilterBefore(new JwtRefreshTokenFilter(rsaKeyRecord,jwtTokenUtils,refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
+//          .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord,jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+//          .exceptionHandling(ex -> {
+//        	  ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//        	  ex.accessDeniedHandler((request, response, accessDeniedException) -> {
+//        	        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+//        	        response.getWriter().write("Access Denied: " + accessDeniedException.getMessage());
+//        	    });
+//          })
+//          .httpBasic(withDefaults())
+//          .build();
+//}
 
 
 
@@ -392,6 +306,63 @@ public class SecurityConfig {
 //}	  	
 
 
+//.logoutSuccessHandler(((request, response, authentication) -> SecurityContextHolder.clearContext()))
+//.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
+//.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))    
+
+
+//@Bean
+//public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity http) throws Exception {
+//  return http
+//      .securityMatcher("/logout")  // Applies to logout requests
+//      .csrf(AbstractHttpConfigurer::disable)
+//      .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+//      .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+//      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//      .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+//      .logout(logout -> logout
+//          .addLogoutHandler(customLogoutHandler)
+//          .logoutUrl("/logout")
+//          .invalidateHttpSession(true)
+//          .logoutSuccessHandler((request, response, authentication) -> {
+//              log.info("Logout successful. Clearing security context.");
+//              SecurityContextHolder.clearContext();
+//          })
+//      )
+//      .exceptionHandling(ex -> {
+//          log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to: {}", ex);
+//          ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//          ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+//      })
+//      .build();
+//}
+
+
+//@Order(5)
+//@Bean
+//public SecurityFilterChain refreshTokenSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
+//  return httpSecurity
+//  		.securityMatcher("/refresh-token")
+//  		.csrf(AbstractHttpConfigurer::disable)
+//  		
+//  		.authorizeHttpRequests(auth -> auth
+//  	              .requestMatchers("/refresh-token").permitAll()  // Allow access to sign-up
+//  	              .anyRequest().authenticated()  // Other requests need to be authenticated
+//  	          )
+//  		.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
+////          .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+//          .addFilterBefore(new JwtRefreshTokenFilter(rsaKeyRecord, jwtTokenUtils, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
+//  		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//          .exceptionHandling(ex -> {
+//              log.error("[SecurityConfig:refreshTokenSecurityFilterChain] Exception due to :{}",ex);
+//              ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//              ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+//          })
+//          .httpBasic(withDefaults())
+//          .build();
+//}
+
+
 //@Order(6) before Customizer
 //@Bean
 //public SecurityFilterChain logoutSecurityFilterChainOrig(HttpSecurity http) throws Exception {
@@ -418,33 +389,18 @@ public class SecurityConfig {
 //            .build();
 //}		
 
-
-//@Order(5)
+//@Order(7)
 //@Bean
-//public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity httpSecurity) throws Exception{
-//    return httpSecurity
-//    		.csrf(AbstractHttpConfigurer::disable)
-//    		.securityMatcher("/log-out/**")
-//    		.authorizeHttpRequests(auth -> {
-//  			auth.requestMatchers(HttpMethod.POST, "/log-out"); 
-//  			auth.anyRequest().authenticated();
-//  		})
-////    		.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-//    		.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-//          .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//            //.addFilterBefore(new JwtRefreshTokenFilter(rsaKeyRecord, jwtTokenUtils, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
-////            .addFilterBefore(new JwtLogoutFilter(rsaKeyRecord, jwtTokenUtils, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
-//          .addFilterBefore(new JwtLogoutFilter(rsaKeyRecord, jwtTokenUtils, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
-//            .exceptionHandling(ex -> {
-//                log.error("[SecurityConfig:refreshTokenSecurityFilterChain] Log out Exception due to :{}",ex);
-//                ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
-//                ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
-//            })
-////            .httpBasic(Customizer.withDefaults())
-//            .build();
-//}	  
-
-
+//public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
+//	  return http
+//		.csrf(AbstractHttpConfigurer::disable)
+//		.securityMatcher("/free/**")
+//      .authorizeHttpRequests((auth) -> {
+//        	auth.requestMatchers("/free/*").permitAll();
+//		})
+//      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//     .build();
+//}	
 
 
 //Working copy
@@ -581,4 +537,16 @@ public class SecurityConfig {
 //                  response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
 //      })
 //      .build();
-//}    
+//}
+
+
+//@Order(8)
+//@Bean
+//public SecurityFilterChain publicSecurityFilterChain1(HttpSecurity http) throws Exception {
+//	  return http
+//		.csrf(AbstractHttpConfigurer::disable)
+//		.securityMatcher("/free/refresh-user")
+//      .authorizeHttpRequests(auth -> 	auth.requestMatchers("/free/refresh-user").permitAll())
+//      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//     .build();
+//}		

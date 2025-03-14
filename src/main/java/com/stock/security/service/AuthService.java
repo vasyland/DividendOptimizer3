@@ -13,13 +13,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.stock.model.UserSubscription;
-import com.stock.repositories.UserSubscriptionsRepository;
+import com.stock.repositories.UserSubscriptionRepository;
 import com.stock.security.dto.AuthResponseDto;
 import com.stock.security.dto.TokenType;
 import com.stock.security.dto.UserRegistrationDto;
 import com.stock.security.entity.RefreshTokenEntity;
-import com.stock.security.entity.UserInfoEntity;
+import com.stock.security.entity.UserInfo;
+import com.stock.security.entity.UserSubscription;
 import com.stock.security.mapper.UserInfoMapper;
 import com.stock.security.repo.RefreshTokenRepo;
 import com.stock.security.repo.UserInfoRepo;
@@ -42,7 +42,7 @@ public class AuthService {
     private final UserInfoMapper userInfoMapper;
     private final LogoutHandlerService logoutHandlerService;
     private final CookieService cookieService;
-    private final UserSubscriptionsRepository userSubscriptionsRepository;
+    private final UserSubscriptionRepository userSubscriptionsRepository;
     
     
 	 /**
@@ -56,35 +56,37 @@ public class AuthService {
 	  */
 		public AuthResponseDto registerUser(UserRegistrationDto userRegistrationDto,
 				HttpServletResponse response) {
+			
 			try {
 				log.info("[AuthService:registerUser]User Registration Started with :::{}", userRegistrationDto);
 
-				Optional<UserInfoEntity> user = userInfoRepo.findByEmailId(userRegistrationDto.userEmail());
+				Optional<UserInfo> user = userInfoRepo.findByEmailId(userRegistrationDto.userEmail());
 				if (user.isPresent()) {
 					throw new Exception("User already exists");
 				}
 
-				UserInfoEntity userDetailsEntity = userInfoMapper.convertToEntity(userRegistrationDto);
-				Authentication authentication = createAuthenticationObject(userDetailsEntity);
+				UserInfo userInfo = userInfoMapper.convertToEntity(userRegistrationDto);
+				Authentication authentication = createAuthenticationObject(userInfo);
 
 				/* Generate a JWT token */
 				String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
 				String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
 
-				UserInfoEntity savedUserDetails = userInfoRepo.save(userDetailsEntity);
+				UserInfo savedUserInfo = userInfoRepo.save(userInfo);
 				
-				log.info("#6 REGISTERED USER ID IS: " + savedUserDetails.getId());
+				log.info("#6 REGISTERED USER ID IS: " + savedUserInfo.getId());
 				log.info("#7 Refresh Token: " + refreshToken);
 				
-				//Let's save the refreshToken as well
-				createUserRefreshToken(userDetailsEntity, refreshToken);
+				//Save the refreshToken into db
+//				createUserRefreshToken(userInfo, refreshToken);
+				
 				createRefreshTokenCookie(response, refreshToken);
 				
 				/* User gets trial access for three days  */
-				UserSubscription subscription = this.createUserTrialSubscription(savedUserDetails.getId(), 3);
+				UserSubscription subscription = this.createUserTrialSubscription(savedUserInfo, 3);
 				String sSubscriptionEndDate = subscription.getSubscriptionEndDate().toString();
 
-				log.info("[AuthService:registerUser] User:{} Successfully registered", savedUserDetails.getUserName());
+				log.info("[AuthService:registerUser] User:{} Successfully registered", savedUserInfo.getUserName());
 				
 				HttpHeaders headers = new HttpHeaders();
 		        
@@ -94,8 +96,8 @@ public class AuthService {
 				return AuthResponseDto.builder()
 						.accessToken(accessToken)
 						.accessTokenExpiry(5 * 60)
-						.id(savedUserDetails.getId())
-						.userName(savedUserDetails.getUserName())
+						.id(savedUserInfo.getId())
+						.userName(savedUserInfo.getUserName())
 						.tokenType(TokenType.Bearer)
 						.subscripitonEndDate(sSubscriptionEndDate)
 						.build();
@@ -114,10 +116,11 @@ public class AuthService {
 		 * 
 		 * return User Subscription
 		 */
-		public UserSubscription createUserTrialSubscription(Long userId, int days) {
+		public UserSubscription createUserTrialSubscription(UserInfo user, int days) {
 			
 			UserSubscription s = new UserSubscription();
-			s.setUserId(userId);
+			
+			s.setUser(user);
 			
 			// Get the current date
 	        LocalDate currentDate = LocalDate.now();
@@ -141,7 +144,7 @@ public class AuthService {
 		        // Getting user authentication data from the database
 		        var userInfoEntity = userInfoRepo.findByEmailId(authentication.getName())
 		                .orElseThrow(() -> {
-		                    log.error("[AuthService:userSignInAuth] User :{} not found", authentication.getName());
+		                    log.error("[AuthService:userSignInAuth] User: {} not found", authentication.getName());
 		                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication failed: Invalid credentials");
 		                });
 
@@ -149,14 +152,15 @@ public class AuthService {
 		        log.info("#20 USER PASSWORD: " + userInfoEntity.getPassword());
 		        
 		        String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
+		        
 		        String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
 
 		        // Save the refresh token
 		        // TODO: Delete old refresh token or simply update it
-		        updateUserRefreshToken(userInfoEntity, refreshToken);
+// march 14        updateUserRefreshToken(userInfoEntity, refreshToken);
 		        
 		        /* Get User Subscription end date*/
-		        UserSubscription subscription = userSubscriptionsRepository.findByUserId(userInfoEntity.getId()).get(0);
+		        UserSubscription subscription = userSubscriptionsRepository.findByUserEmailId(userInfoEntity.getEmailId()).get(0);  //findByUserId(userInfoEntity.getId()).get(0);
 		        String subscriptionEndDate = subscription.getSubscriptionEndDate().toString();
 		        if(subscription == null) {
 		        	LocalDate currentDate = LocalDate.now();
@@ -239,7 +243,7 @@ public class AuthService {
      * @param userInfoEntity
      * @param refreshToken
      */
-	private void createUserRefreshToken(UserInfoEntity userInfoEntity, String refreshToken) {
+	private void createUserRefreshToken(UserInfo userInfoEntity, String refreshToken) {
 		var refreshTokenEntity = RefreshTokenEntity.builder()
 				.user(userInfoEntity)
 				.refreshToken(refreshToken)
@@ -255,7 +259,7 @@ public class AuthService {
      * @param userInfoEntity
      * @param refreshToken
      */
-	private void updateUserRefreshToken(UserInfoEntity userInfoEntity, String refreshToken) {
+	private void updateUserRefreshToken(UserInfo userInfoEntity, String refreshToken) {
 		
 		/* Find existing user refresh token by user id */
 		RefreshTokenEntity existingRefreshToken = refreshTokenRepo.findByUserId(userInfoEntity.getId()).get(0);
@@ -269,7 +273,8 @@ public class AuthService {
 			refreshTokenRepo.save(refreshTokenEntity);
 		}
 		/* Update existing and save */
-		existingRefreshToken.setRefreshToken(refreshToken);
+//		existingRefreshToken.setRefreshToken(refreshToken);
+		
 		refreshTokenRepo.save(existingRefreshToken);
 	}	
 	
@@ -312,6 +317,7 @@ public class AuthService {
 	 */
 	public AuthResponseDto getAccessTokenFromRequestWithCookies(String refreshToken, HttpServletResponse response) {
 		
+		log.info("#21-Auth REFRESH TOKEN: " + refreshToken);
 		log.info("#4 Refresh Token in: ", refreshToken);
 		
 	    try {
@@ -320,24 +326,36 @@ public class AuthService {
 	                .filter(tokens-> !tokens.isRevoked())
 	                .orElseThrow(()-> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Refresh token revoked"));
 	
-	        UserInfoEntity userInfoEntity = refreshTokenEntity.getUser();
+	        UserInfo userInfo = refreshTokenEntity.getUser();
 	        
 	        //Now create the Authentication object
-	        Authentication authentication =  createAuthenticationObject(userInfoEntity);
+	        Authentication authentication =  createAuthenticationObject(userInfo);
 	
 	        //Use the authentication object to generate new accessToken as the Authentication object that we will have may not contain correct role. 
 	        String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
 	        
-	        /*  */
+	        // Generate a new refresh token
 	        String newRefreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
-	        updateUserRefreshToken(userInfoEntity, newRefreshToken);
+	        
+	        // Saving a new refresh token into db
+	        // updateUserRefreshToken(userInfo, newRefreshToken);
+	        
 	        createRefreshTokenCookie(response, newRefreshToken);
-	
+	        
+	        /* Get User Subscription end date*/
+	        UserSubscription subscription = userSubscriptionsRepository.findByUserEmailId(userInfo.getEmailId()).get(0);  //findByUserId(userInfoEntity.getId()).get(0);
+	        String subscriptionEndDate = subscription.getSubscriptionEndDate().toString();
+	        if(subscription == null) {
+	        	LocalDate currentDate = LocalDate.now();
+	        	subscriptionEndDate = currentDate.toString();
+	        }
+
 	        return  AuthResponseDto.builder()
 	                .accessToken(accessToken)
 	                .accessTokenExpiry(5 * 60)
-	                .id(userInfoEntity.getId())
-	                .userName(userInfoEntity.getUserName())
+	                .id(userInfo.getId())
+	                .userName(userInfo.getUserName())
+	                .subscripitonEndDate(subscriptionEndDate)
 	                .tokenType(TokenType.Bearer)
 	                .build();
 	        
@@ -370,7 +388,7 @@ public class AuthService {
                 .filter(tokens-> !tokens.isRevoked())
                 .orElseThrow(()-> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Refresh token revoked"));
 
-        UserInfoEntity userInfoEntity = refreshTokenEntity.getUser();
+        UserInfo userInfoEntity = refreshTokenEntity.getUser();
         
         //Now create the Authentication object
         Authentication authentication =  createAuthenticationObject(userInfoEntity);
@@ -412,7 +430,7 @@ public class AuthService {
                 .filter(tokens-> !tokens.isRevoked())
                 .orElseThrow(()-> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Refresh token revoked or cannot be found"));
 
-        UserInfoEntity userInfoEntity = refreshTokenEntity.getUser();
+        UserInfo userInfoEntity = refreshTokenEntity.getUser();
         
         /* Revoke refresh token in the db  */
 		var storedRefreshToken = refreshTokenRepo.findByRefreshToken(activeRefreshToken)
@@ -451,7 +469,7 @@ public class AuthService {
 	
 	
 	
-	 private static Authentication createAuthenticationObject(UserInfoEntity userInfoEntity) {
+	 private static Authentication createAuthenticationObject(UserInfo userInfoEntity) {
          // Extract user details from UserDetailsEntity
          String username = userInfoEntity.getEmailId();
          String password = userInfoEntity.getPassword();
@@ -476,21 +494,21 @@ public class AuthService {
 		public AuthResponseDto registerUser2(UserRegistrationDto userRegistrationDto,
 				HttpServletResponse response) {
 			try {
-				log.info("[AuthService:registerUser]User Registration Started with :::{}", userRegistrationDto);
+				log.info("[AuthService:registerUser2]User Registration Started with :::{}", userRegistrationDto);
 
-				Optional<UserInfoEntity> user = userInfoRepo.findByEmailId(userRegistrationDto.userEmail());
+				Optional<UserInfo> user = userInfoRepo.findByEmailId(userRegistrationDto.userEmail());
 				if (user.isPresent()) {
 					throw new Exception("User already exists");
 				}
 
-				UserInfoEntity userDetailsEntity = userInfoMapper.convertToEntity(userRegistrationDto);
+				UserInfo userDetailsEntity = userInfoMapper.convertToEntity(userRegistrationDto);
 				Authentication authentication = createAuthenticationObject(userDetailsEntity);
 
 				/* Generate a JWT token */
 				String accessToken = jwtTokenGenerator.generateAccessToken(authentication);
 				String refreshToken = jwtTokenGenerator.generateRefreshToken(authentication);
 
-				UserInfoEntity savedUserDetails = userInfoRepo.save(userDetailsEntity);
+				UserInfo savedUserDetails = userInfoRepo.save(userDetailsEntity);
 				
 				log.info("#6 REGISTERED USER ID IS: " + savedUserDetails.getId());
 				log.info("#7 Refresh Token: " + refreshToken);

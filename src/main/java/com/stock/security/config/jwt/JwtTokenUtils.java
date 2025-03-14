@@ -1,14 +1,18 @@
 package com.stock.security.config.jwt;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
+import com.stock.repositories.UserSubscriptionRepository;
 import com.stock.security.config.user.UserInfoConfig;
+import com.stock.security.entity.UserSubscription;
 import com.stock.security.repo.UserInfoRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtTokenUtils {
 
 	private final UserInfoRepo userInfoRepo;
+	private final UserSubscriptionRepository userSubscriptionRepository;
 	
     public String getUserName(Jwt jwtToken){
         return jwtToken.getSubject();
@@ -91,6 +96,14 @@ public class JwtTokenUtils {
                 .findByEmailId(email)
                 .map(UserInfoConfig::new)
                 .orElseThrow(()-> new UsernameNotFoundException("UserEmail: "+email+" does not exist"));
+    }
+    
+    
+    /**
+     * Getting all user subscriptions by User Id
+     */
+    public List<UserSubscription> getUserSubscriptionsByEmail(String email) {
+        return userSubscriptionRepository.findByUserEmailId(email);
     }
 }
 

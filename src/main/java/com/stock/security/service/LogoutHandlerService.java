@@ -18,7 +18,7 @@ import com.stock.security.config.RSAKeyRecord;
 import com.stock.security.config.jwt.JwtTokenUtils;
 import com.stock.security.dto.TokenType;
 import com.stock.security.entity.RefreshTokenEntity;
-import com.stock.security.entity.UserInfoEntity;
+import com.stock.security.entity.UserInfo;
 import com.stock.security.repo.RefreshTokenRepo;
 import com.stock.security.repo.UserInfoRepo;
 import com.stock.security.util.CookieService;
@@ -54,7 +54,6 @@ public class LogoutHandlerService implements LogoutHandler {
 
 		log.info("[LogoutHandlerService.logout] LOGOUT Handler: ");
 
-
 		final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
 		log.info("LOGOUT Handler authHeader = " + authHeader);
@@ -74,7 +73,7 @@ public class LogoutHandlerService implements LogoutHandler {
 
 		/** Here add refresh token removal */
 		// Find user id using email
-		UserInfoEntity userInfoEntity = userInfoRepo.findByEmailId(userEmail).get();
+		UserInfo userInfoEntity = userInfoRepo.findByEmailId(userEmail).get();
 		if (userInfoEntity != null) {
 			log.info("Found User ID: " + userInfoEntity.getId());
 

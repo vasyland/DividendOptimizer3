@@ -63,6 +63,12 @@ public class AuthController {
     }    
 
 
+    /**
+     * Login
+     * @param authentication
+     * @param response
+     * @return
+     */
     @GetMapping("/sign-in")
     public ResponseEntity<?> authenticateUser(Authentication authentication, HttpServletResponse response){
     	log.info("#1 /sigh-in authentication.getName() = " + authentication.getName());
@@ -71,6 +77,18 @@ public class AuthController {
     }    
     
 
+    
+    /**
+     * 1. Actually we need to get a full set of a new tokens (access and refresh) for the user as during login, 
+     * but instead of using user id and password we use a refresh token.
+     * The only thing tha we need to validate a refresh token and if it is invalid than we need to return 
+     * a message for user to re-login. 
+     * 2. This end- point should be open to public in the same way as a login end-point without any authorization in the header.
+     * 
+     * @param refreshToken
+     * @param authorizationHeader
+     * @return
+     */
 //  @PreAuthorize("hasAnyRole('ROLE_MANAGER','ROLE_ADMIN','ROLE_USER')")
     @CrossOrigin
 //    @PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
@@ -85,6 +103,20 @@ public class AuthController {
         return ResponseEntity.ok(authService.getAccessTokenUsingRefreshToken(authorizationHeader, refreshToken));
     }
     
+    
+////  @PreAuthorize("hasAnyRole('ROLE_MANAGER','ROLE_ADMIN','ROLE_USER')")
+//    @CrossOrigin
+////    @PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
+//    @PostMapping ("/refresh-token")
+//    public ResponseEntity<?> getAccessToken( @CookieValue(value = "refreshToken", required = false) String refreshToken,
+//    		@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader){
+//    	log.info("# 100 Refresh token is " + refreshToken);
+//    	if (refreshToken == null || refreshToken.isEmpty()) {
+//    		log.info("# 100 Refresh token is " + refreshToken);
+//    		return ResponseEntity.badRequest().body("Refresh token is missing");
+//    	}
+//        return ResponseEntity.ok(authService.getAccessTokenUsingRefreshToken(authorizationHeader, refreshToken));
+//    }    
     
   //@PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
 //    @PostMapping ("/logout")
@@ -125,6 +157,8 @@ public class AuthController {
      * It is funny that if someone has access to the computer can copy refresh token and design an app
      * to make a call to get a new access token and vu a lja!
      * Also, it is a good idea to generate a new refresh token too.
+     * 
+     * Security configured that a valid access token should be present, otherwise a user must to login
      * @param request
      * @return
      */
@@ -137,7 +171,6 @@ public class AuthController {
         Cookie[] cookies = request.getCookies();
         
         log.info("#20 REFRESH TOKEN cookies: " + cookies);
-        
         if (cookies != null) {
         	refreshToken = Arrays.stream(cookies)
         			.filter(cookie -> "refresh_token".equals(cookie.getName()))
@@ -156,6 +189,12 @@ public class AuthController {
         return null;
     }
 
+    
+    /**
+     * Shows coockies when a request contains a valid access token
+     * @param request
+     * @return
+     */
     @CrossOrigin
     @GetMapping("/all-cookies")
     public @ResponseBody String readAllCookies(HttpServletRequest request) {

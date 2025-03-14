@@ -5,7 +5,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import com.stock.security.dto.UserRegistrationDto;
-import com.stock.security.entity.UserInfoEntity;
+import com.stock.security.entity.UserInfo;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,9 +18,9 @@ public class UserInfoMapper {
 
     private final PasswordEncoder passwordEncoder;
     
-    public UserInfoEntity convertToEntity(UserRegistrationDto userRegistrationDto) {
+    public UserInfo convertToEntity(UserRegistrationDto userRegistrationDto) {
     	
-        UserInfoEntity userInfoEntity = new UserInfoEntity();
+        UserInfo userInfoEntity = new UserInfo();
         userInfoEntity.setUserName(userRegistrationDto.userName());
         userInfoEntity.setEmailId(userRegistrationDto.userEmail());
         userInfoEntity.setMobileNumber(userRegistrationDto.userMobileNo());

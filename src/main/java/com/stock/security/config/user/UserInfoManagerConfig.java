@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.stock.security.entity.UserInfoEntity;
+import com.stock.security.entity.UserInfo;
 import com.stock.security.repo.UserInfoRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class UserInfoManagerConfig implements UserDetailsService {
 	@Override
     public UserDetails loadUserByUsername(String emailId) throws UsernameNotFoundException {
 		
-		UserInfoEntity u0 = userInfoRepo.findByEmailId(emailId).get();
+		UserInfo u0 = userInfoRepo.findByEmailId(emailId).get();
 		
 		log.info("#5 EMAIL FROM DB: " + u0.getEmailId());
 		

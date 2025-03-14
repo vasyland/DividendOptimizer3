@@ -46,9 +46,9 @@ public class JwtTokenGenerator {
         String permissions = getPermissionsFromRoles(roles);
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("iwm3")
+                .issuer("iwm5")
                 .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plus(3, ChronoUnit.HOURS))
+                .expiresAt(Instant.now().plus(3, ChronoUnit.HOURS))  // Instant.now().plus(3, ChronoUnit.HOURS)
                 .subject(authentication.getName())
                 .claim("scope", permissions)
                 .build();
@@ -67,7 +67,7 @@ public class JwtTokenGenerator {
         log.info("[JwtTokenGenerator:generateRefreshToken] Token Creation Started for:{}", authentication.getName());
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("iwm3")
+                .issuer("iwm5")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plus(15, ChronoUnit.DAYS))
                 .subject(authentication.getName())
@@ -89,7 +89,7 @@ public class JwtTokenGenerator {
         log.info("[JwtTokenGenerator:generateRefreshToken] Token Creation Started for signup:{}", username);
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("iwm3")
+                .issuer("iwm5")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plus(15, ChronoUnit.DAYS))
                 .subject(username)

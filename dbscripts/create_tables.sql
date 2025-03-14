@@ -49,8 +49,13 @@ commit;
 
 
 -- User Subscriptions
+use golem;
+drop table user_subscription;
+drop table user_subscription_seq;
+
+-- User Subscriptions
 CREATE TABLE `user_subscription` (
-  `id` bigint NOT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
   `user_id` bigint DEFAULT NULL,
   `subscription_end_date` datetime,
   `created_on` datetime DEFAULT CURRENT_TIMESTAMP,

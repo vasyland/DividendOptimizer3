@@ -37,7 +37,7 @@ public class RefreshTokenEntity {
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "user_id",referencedColumnName = "id")
-    private UserInfoEntity user;
+    private UserInfo user;
     
     
 

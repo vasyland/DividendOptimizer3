@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtRefreshTokenFilter extends OncePerRequestFilter {
 
-    private  final RSAKeyRecord rsaKeyRecord;
+    private final RSAKeyRecord rsaKeyRecord;
     private final JwtTokenUtils jwtTokenUtils;
     private final RefreshTokenRepo refreshTokenRepo;
 
