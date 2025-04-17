@@ -14,6 +14,6 @@ import com.stock.security.entity.UserInfo;
  * @author atquil
  */
 @Repository
-public interface UserInfoRepo extends JpaRepository<UserInfo, Long> {
+public interface UserInfoRepository extends JpaRepository<UserInfo, Long> {
     Optional<UserInfo> findByEmailId(String emailId);
 }

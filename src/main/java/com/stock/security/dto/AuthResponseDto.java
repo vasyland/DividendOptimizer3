@@ -31,8 +31,8 @@ public class AuthResponseDto {
     @JsonProperty("user_name")
     private String userName;
 
-    @JsonProperty("subscription_end_date")
-    private String subscripitonEndDate;
+    @JsonProperty("subscriptionExpiry")
+    private String subscriptionExpiry;
 
 //    @JsonProperty("refresh_token")
 //    private String refreshToken;

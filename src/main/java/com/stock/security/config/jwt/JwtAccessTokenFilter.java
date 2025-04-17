@@ -56,29 +56,45 @@ public class JwtAccessTokenFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
     	
+    	log.info("[JwtAccessTokenFilter] #0 Request received: {}", request.getRequestURI());
+    	log.info("[JwtAccessTokenFilter:doFilterInternal] :: #1 Started ");
+    	
     	// Get request URI
         String requestURI = request.getRequestURI();
         
     	// Skip JWT filter for refresh token endpoint
-        if (requestURI.equals("/free/refresh-user") || requestURI.equals("/sign-up") || requestURI.equals("/all-cookies")) {
+        if (requestURI.equals("/sign-in") || requestURI.equals("/free/refresh-user") || requestURI.equals("/sign-up") || requestURI.equals("/all-cookies")) {
             filterChain.doFilter(request, response);
             return;
         }
     	
-    	
         try{
-            log.info("[JwtAccessTokenFilter:doFilterInternal] :: Started ");
-            log.info("[JwtAccessTokenFilter:doFilterInternal]Filtering the Http Request:{}",request.getRequestURI());
+            log.info("[JwtAccessTokenFilter:doFilterInternal] :: #2 Started ");
+            log.info("[JwtAccessTokenFilter:doFilterInternal] #3 Filtering the Http Request:{}",request.getRequestURI());
 
             final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
             JwtDecoder jwtDecoder =  NimbusJwtDecoder.withPublicKey(rsaKeyRecord.rsaPublicKey()).build();
 
-            if(!authHeader.startsWith(TokenType.Bearer.name())){
-                filterChain.doFilter(request,response);
+//            if(!authHeader.startsWith(TokenType.Bearer.name())){
+//                filterChain.doFilter(request,response);
+//                return;
+//            }
+
+            log.info("[JwtAccessTokenFilter:doFilterInternal] :: #4 authHeader = " + authHeader);
+            
+//            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+//                filterChain.doFilter(request, response); // Continue without authentication
+//                return;
+//            }
+            
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                log.error("[JwtAccessTokenFilter] Missing or invalid Authorization header.");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Missing or invalid token");
                 return;
             }
 
+            
             final String token = authHeader.substring(7);
             final Jwt jwtToken = jwtDecoder.decode(token);
 
@@ -88,8 +104,10 @@ public class JwtAccessTokenFilter extends OncePerRequestFilter {
             if(!userName.isEmpty() && SecurityContextHolder.getContext().getAuthentication() == null){
 
                 UserDetails userDetails = jwtTokenUtils.userDetails(userName);
+                
                 if(jwtTokenUtils.isTokenValid(jwtToken,userDetails)){
-                    SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+                
+                	SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
 
                     UsernamePasswordAuthenticationToken createdToken = new UsernamePasswordAuthenticationToken(
                             userDetails,

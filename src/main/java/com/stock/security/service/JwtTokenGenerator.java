@@ -48,7 +48,7 @@ public class JwtTokenGenerator {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("iwm5")
                 .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plus(3, ChronoUnit.HOURS))  // Instant.now().plus(3, ChronoUnit.HOURS)
+                .expiresAt(Instant.now().plus(10, ChronoUnit.HOURS))  // Instant.now().plus(3, ChronoUnit.HOURS)
                 .subject(authentication.getName())
                 .claim("scope", permissions)
                 .build();
@@ -57,6 +57,32 @@ public class JwtTokenGenerator {
     }
 
 
+    /**
+     * Generating Access Token
+     * @param userName
+     * @return
+     */
+    public String generateAccessToken(String userEmail) {
+
+        log.info("[JwtTokenGenerator:generateAccessToken] Token Creation Started for:{}", userEmail);
+
+        String roles = "READ";
+        log.info("#1 ROLES TP GENERATE TOKEN: " + roles);
+        
+        String permissions = getPermissionsFromRoles(roles);
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer("iwm5")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plus(3, ChronoUnit.HOURS))  // Instant.now().plus(3, ChronoUnit.HOURS)
+                .subject(userEmail)
+                .claim("scope", permissions)
+                .build();
+
+        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    }    
+    
+    
     /**
      * Generating Refresh Token available for 3 months
      * @param authentication
@@ -84,7 +110,8 @@ public class JwtTokenGenerator {
      * @param authentication
      * @return
      */
-    public String generateRefreshTokenAfterSignup(String username) {
+//    public String generateRefreshTokenAfterSignup(String username) {
+    public String generateRefreshToken(String username) {
 
         log.info("[JwtTokenGenerator:generateRefreshToken] Token Creation Started for signup:{}", username);
 

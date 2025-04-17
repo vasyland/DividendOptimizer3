@@ -7,7 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import com.stock.security.entity.UserInfo;
-import com.stock.security.repo.UserInfoRepo;
+import com.stock.security.repo.UserInfoRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 public class InitialUserInfo implements CommandLineRunner {
 	
-	private final UserInfoRepo userInfoRepo;
+	private final UserInfoRepository userInfoRepo;
     private final PasswordEncoder passwordEncoder;
 
 	@Override

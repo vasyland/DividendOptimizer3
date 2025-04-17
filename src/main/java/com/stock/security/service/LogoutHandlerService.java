@@ -20,7 +20,7 @@ import com.stock.security.dto.TokenType;
 import com.stock.security.entity.RefreshTokenEntity;
 import com.stock.security.entity.UserInfo;
 import com.stock.security.repo.RefreshTokenRepo;
-import com.stock.security.repo.UserInfoRepo;
+import com.stock.security.repo.UserInfoRepository;
 import com.stock.security.util.CookieService;
 
 import jakarta.servlet.http.Cookie;
@@ -44,7 +44,7 @@ public class LogoutHandlerService implements LogoutHandler {
 
 	private final RefreshTokenRepo refreshTokenRepo;
 	private final CookieService cookieService;
-	private final UserInfoRepo userInfoRepo;
+	private final UserInfoRepository userInfoRepo;
 
 	private final RSAKeyRecord rsaKeyRecord;
 	private final JwtTokenUtils jwtTokenUtils;
@@ -70,19 +70,6 @@ public class LogoutHandlerService implements LogoutHandler {
 		String userEmail = jwtTokenUtils.getUserName(jwtToken);
 
 		log.info("jwtTokenUtils.getUserName() = " + userEmail);
-
-		/** Here add refresh token removal */
-		// Find user id using email
-		UserInfo userInfoEntity = userInfoRepo.findByEmailId(userEmail).get();
-		if (userInfoEntity != null) {
-			log.info("Found User ID: " + userInfoEntity.getId());
-
-			List<RefreshTokenEntity> refreshTokens = refreshTokenRepo.findByUserId(userInfoEntity.getId());
-			RefreshTokenEntity currentRefreshToken = refreshTokens.getFirst();
-			currentRefreshToken.setRefreshToken("User logged out");
-			refreshTokenRepo.deleteAll(refreshTokens);
-			refreshTokenRepo.save(currentRefreshToken);
-		}
 
 		// Clear all cookies
 		clearCookies(request, response);
@@ -137,74 +124,93 @@ public class LogoutHandlerService implements LogoutHandler {
 		}
 	}
 
-	/**
-	 * 
-	 */
-	// @Override
-	public void logoutMine(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-
-		/**
-		 * We need to get a refresh token from the request in order revoke it in the
-		 * database
-		 */
-		Cookie[] cookies = request.getCookies();
-
-		String refreshToken = "";
-		/* Show all cookies */
-		log.info("\n\n#800 Started LogoutHandlerService.logout()");
-
-		log.info("# 801 Authentication data");
-		if (authentication == null) {
-			log.info("#802 Authentication data is NULL");
-		}
-//        log.info("#802 Authentication data - authentication.isAuthenticated() " + authentication.isAuthenticated());
-//        log.info("#802 Authentication data - authentication.getPrincipal() " + authentication.getPrincipal().toString());
-
-		if (cookies != null) {
-
-			String searchedToken = cookieService.findCookieByName(cookies, "refresh_token");
-			log.info("#803 Searched Token with name refresh_token = " + searchedToken);
-
-			System.out.println(
-					"--------------- SHOW ALL COOKIES -------------------------------------------------------");
-			for (Cookie c : cookies) {
-				System.out.println(c.getName() + " = " + c.getValue());
-			}
-			System.out.println(
-					"--------------- END OF ALL COOKIES -------------------------------------------------------");
-
-//        	allCookies = Arrays.stream(cookies)
-//                    .map(c -> c.getName() + "=" + c.getValue()).collect(Collectors.joining(", "));
-
-			Optional<Cookie> el = Arrays.stream(cookies)
-					.filter(e -> e.getName().contains("refresh_token"))
-					.findAny();
-
-			System.out.println("Refresh Token: " + el.get());
-
-			if (el != null) {
-				refreshToken = el.get().getValue();
-//    			int inx = token.indexOf("=");
-//    			oldRefreshToken = token.substring(inx+1);
-				System.out.println("Token Value: " + refreshToken);
-			}
-
-		} else {
-			log.error("Cookies are NULL");
-		}
-
-//        if(!authHeader.startsWith(TokenType.Bearer.name())){
-//            return;
-//        }
-
-		// final String refreshToken = authHeader.substring(7);
-
-		var storedRefreshToken = refreshTokenRepo.findByRefreshToken(refreshToken)
-				.map(token -> {
-					token.setRevoked(true);
-					refreshTokenRepo.save(token);
-					return token;
-				})
-				.orElse(null);
-	}
 }
+
+
+
+
+/**
+ * 
+ */
+// @Override
+//public void logoutMine(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+//
+//	/**
+//	 * We need to get a refresh token from the request in order revoke it in the
+//	 * database
+//	 */
+//	Cookie[] cookies = request.getCookies();
+//
+//	String refreshToken = "";
+//	/* Show all cookies */
+//	log.info("\n\n#800 Started LogoutHandlerService.logout()");
+//
+//	log.info("# 801 Authentication data");
+//	if (authentication == null) {
+//		log.info("#802 Authentication data is NULL");
+//	}
+////    log.info("#802 Authentication data - authentication.isAuthenticated() " + authentication.isAuthenticated());
+////    log.info("#802 Authentication data - authentication.getPrincipal() " + authentication.getPrincipal().toString());
+//
+//	if (cookies != null) {
+//
+//		String searchedToken = cookieService.findCookieByName(cookies, "refresh_token");
+//		log.info("#803 Searched Token with name refresh_token = " + searchedToken);
+//
+//		System.out.println(
+//				"--------------- SHOW ALL COOKIES -------------------------------------------------------");
+//		for (Cookie c : cookies) {
+//			System.out.println(c.getName() + " = " + c.getValue());
+//		}
+//		System.out.println(
+//				"--------------- END OF ALL COOKIES -------------------------------------------------------");
+//
+////    	allCookies = Arrays.stream(cookies)
+////                .map(c -> c.getName() + "=" + c.getValue()).collect(Collectors.joining(", "));
+//
+//		Optional<Cookie> el = Arrays.stream(cookies)
+//				.filter(e -> e.getName().contains("refresh_token"))
+//				.findAny();
+//
+//		System.out.println("Refresh Token: " + el.get());
+//
+//		if (el != null) {
+//			refreshToken = el.get().getValue();
+////			int inx = token.indexOf("=");
+////			oldRefreshToken = token.substring(inx+1);
+//			System.out.println("Token Value: " + refreshToken);
+//		}
+//
+//	} else {
+//		log.error("Cookies are NULL");
+//	}
+//
+////    if(!authHeader.startsWith(TokenType.Bearer.name())){
+////        return;
+////    }
+//
+//	// final String refreshToken = authHeader.substring(7);
+//
+//	var storedRefreshToken = refreshTokenRepo.findByRefreshToken(refreshToken)
+//			.map(token -> {
+//				token.setRevoked(true);
+//				refreshTokenRepo.save(token);
+//				return token;
+//			})
+//			.orElse(null);
+//}
+
+
+/** Here add refresh token removal */
+// Find user id using email
+//UserInfo userInfoEntity = userInfoRepo.findByEmailId(userEmail).get();
+//if (userInfoEntity != null) {
+//	log.info("Found User ID: " + userInfoEntity.getId());
+//
+//	List<RefreshTokenEntity> refreshTokens = refreshTokenRepo.findByUserId(userInfoEntity.getId());
+//	RefreshTokenEntity currentRefreshToken = refreshTokens.getFirst();
+//	currentRefreshToken.setRefreshToken("User logged out");
+//	refreshTokenRepo.deleteAll(refreshTokens);
+//	refreshTokenRepo.save(currentRefreshToken);
+//}
+

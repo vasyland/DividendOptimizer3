@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import com.stock.repositories.UserSubscriptionRepository;
 import com.stock.security.config.user.UserInfoConfig;
 import com.stock.security.entity.UserSubscription;
-import com.stock.security.repo.UserInfoRepo;
+import com.stock.security.repo.UserInfoRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtTokenUtils {
 
-	private final UserInfoRepo userInfoRepo;
+	private final UserInfoRepository userInfoRepo;
 	private final UserSubscriptionRepository userSubscriptionRepository;
 	
     public String getUserName(Jwt jwtToken){

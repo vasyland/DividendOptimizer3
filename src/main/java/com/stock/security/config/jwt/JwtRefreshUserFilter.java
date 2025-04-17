@@ -85,11 +85,11 @@ public class JwtRefreshUserFilter extends OncePerRequestFilter {
 
 			
 			UserSubscription subscription = jwtTokenUtils.getUserSubscriptionsByEmail(userName).get(0);
-			log.info("User Subscription Date: " + subscription.getSubscriptionEndDate());
+			log.info("User Subscription Date: " + subscription.getSubscriptionExpiry());
 			
-			LocalDate subscriptionExpiry = subscription.getSubscriptionEndDate();
+//			LocalDate subscriptionExpiry = subscription.getSubscriptionExpiry();
 
-			if (subscription.getSubscriptionEndDate().isBefore(LocalDate.now())) {
+			if (subscription.getSubscriptionExpiry().isBefore(LocalDate.now())) {
 				log.warn("[JwtRefreshUserFilter] Subscription expired for user: {}", userName);
 
 				response.setStatus(HttpServletResponse.SC_FORBIDDEN);

@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.stock.security.entity.UserInfo;
-import com.stock.security.repo.UserInfoRepo;
+import com.stock.security.repo.UserInfoRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +24,7 @@ public class UserInfoManagerConfig implements UserDetailsService {
 
 	private static final Logger log = LoggerFactory.getLogger(UserInfoManagerConfig.class);
 	
-    private final UserInfoRepo userInfoRepo;
+    private final UserInfoRepository userInfoRepo;
     
       
 	@Override

@@ -7,14 +7,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
+
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
+
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -27,7 +27,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
-import org.springframework.security.web.context.SecurityContextPersistenceFilter;
+
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
@@ -38,26 +38,20 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.stock.security.config.jwt.JwtAccessTokenFilter;
-import com.stock.security.config.jwt.JwtLogoutFilter;
-import com.stock.security.config.jwt.JwtRefreshTokenFilter;
+
 import com.stock.security.config.jwt.JwtRefreshUserFilter;
 import com.stock.security.config.jwt.JwtTokenUtils;
 import com.stock.security.config.user.UserInfoManagerConfig;
 import com.stock.security.repo.RefreshTokenRepo;
 import com.stock.security.service.CustomLogoutHandler;
-import com.stock.security.service.CustomLogoutSuccessHandler;
+
 import com.stock.security.service.LogoutHandlerService;
 import com.stock.security.util.CookieService;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
 /**
  * See https://docs.spring.io/spring-security/reference/5.8/migration/servlet/config.html
@@ -77,8 +71,6 @@ public class SecurityConfig {
 	private final RSAKeyRecord rsaKeyRecord;
 	private final JwtTokenUtils jwtTokenUtils;
 	private final CookieService cookieService;
-	private final RefreshTokenRepo refreshTokenRepo;
-	private final LogoutHandlerService logoutHandlerService;
 
 	private final JwtAccessTokenFilter jwtAccessTokenFilter;
 	
@@ -92,26 +84,60 @@ public class SecurityConfig {
 	 * @return
 	 * @throws Exception
 	 */
+//	@Order(1)
+//    @Bean
+//    public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+//        return httpSecurity
+//        		.csrf(AbstractHttpConfigurer::disable)
+//                .securityMatcher("/sign-in")
+//                .authorizeHttpRequests(auth -> auth
+//            		.requestMatchers("/sign-in").permitAll()
+////            		.requestMatchers(HttpMethod.GET, "/login").permitAll()
+//                )
+//                .userDetailsService(userInfoManagerConfig)
+//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+////                .httpBasic(Customizer.withDefaults())
+//                .httpBasic(httpBasic -> httpBasic
+//                        .authenticationEntryPoint(noPopupBasicAuthenticationEntryPoint()) // suppress pop-up
+//                )
+//                .build();
+//    }
+
 	@Order(1)
-    @Bean
-    public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity
-        		.csrf(AbstractHttpConfigurer::disable)
-                .securityMatcher("/sign-in")
-                .authorizeHttpRequests(auth -> auth
-            		.requestMatchers("/sign-in").permitAll()
-//            		.requestMatchers(HttpMethod.GET, "/login").permitAll()
-                )
-                .userDetailsService(userInfoManagerConfig)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .httpBasic(Customizer.withDefaults())
-                .httpBasic(httpBasic -> httpBasic
-                        .authenticationEntryPoint(noPopupBasicAuthenticationEntryPoint()) // suppress pop-up
-                )
-                .build();
-    }
+	@Bean
+	public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+		return httpSecurity
+				.csrf(AbstractHttpConfigurer::disable)
+				.securityMatcher("/sign-in")
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/sign-in").permitAll()
+				)
+				.userDetailsService(userInfoManagerConfig)
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.httpBasic(httpBasic -> httpBasic
+						.authenticationEntryPoint(noPopupBasicAuthenticationEntryPoint()) // suppress pop-up
+				)
+				.build();
+	}
 
+//	@Order(1)
+//	@Bean
+//	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+//	    return httpSecurity
+//	            .csrf(AbstractHttpConfigurer::disable)
+//	            .authorizeHttpRequests(auth -> auth
+//	                .requestMatchers("/sign-in").permitAll()
+//	                .anyRequest().authenticated()
+//	            )
+//	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//	            .httpBasic(httpBasic -> 
+//	                httpBasic.authenticationEntryPoint(noPopupBasicAuthenticationEntryPoint())
+//	            )
+//	            .build();
+//	}
 
+	
+	
 	/**
 	 * This class is to suppress  The authentication pop-up is caused by the response header WWW-Authenticate: Basic, 
 	 * which is set by BasicAuthenticationEntryPoint.
@@ -137,74 +163,75 @@ public class SecurityConfig {
 							.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage()));
 				})
 				.build();
-	}    	
-	
-	
-	@Order(3)
-    @Bean
-    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
-        return http
-            .securityMatcher("/api/**") // Use `securityMatcher` for Spring Security 6.x
-            .csrf(AbstractHttpConfigurer::disable)
-//            .authorizeHttpRequests(auth -> auth
-//                .requestMatchers("/api/**").hasAuthority("SCOPE_READ")  //.hasAnyRole("USER", "USUSER", "CAUSER") // .authenticated()
-//            )
-            .authorizeHttpRequests(auth -> {
-	  			auth.requestMatchers(HttpMethod.GET, "/api/ca-buy-list","/api/us-buy-list","/api/scenario/user/*"); 
-	  			auth.requestMatchers(HttpMethod.POST, "/api/scenario/add"); 
-	  			auth.anyRequest().authenticated();
-            })
-            .exceptionHandling(ex -> {
-                log.error("[SecurityConfig:apiSecurityFilterChain] Exception due to: {}", ex);
-                ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
-                ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
-            })
-            .httpBasic(Customizer.withDefaults())
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-            .build();
-    }
-    
-//  .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+	}
 
-	  @Order(4)
-	  @Bean
-	  public SecurityFilterChain refreshUserSecurityFilterChain(HttpSecurity http) throws Exception {
-		  return http
-	  		.csrf(AbstractHttpConfigurer::disable)
+
+	@Order(3)
+	@Bean
+	public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+	    return http
+	        .securityMatcher("/api/**")
+	        .csrf(AbstractHttpConfigurer::disable)
+	        .authorizeHttpRequests(auth -> auth
+	            .requestMatchers(HttpMethod.GET, "/api/ca-buy-list", "/api/us-buy-list", "/api/portfolios/*", "/api/portfolio-trades/*").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
+	            .requestMatchers(HttpMethod.POST,  "/api/portfolios", "/api/portfolios/*", "/api/portfolio-trade/*").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
+	            .requestMatchers(HttpMethod.PUT, "/api/portfolios").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
+	            .requestMatchers(HttpMethod.DELETE, "/api/portfolios/*").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
+	            .anyRequest().authenticated()
+	        )
+	        .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+	        .exceptionHandling(ex -> {
+	            ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+	            ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+	        })
+	        .build();
+	}
+
+
+	@Bean
+	@Order(4)
+	public SecurityFilterChain refreshUserSecurityFilterChain(HttpSecurity http) throws Exception {
+		return http
+			.csrf(AbstractHttpConfigurer::disable)
 	  		.securityMatcher("/free/refresh-user")
 	        .authorizeHttpRequests(auth -> 	auth.requestMatchers("/free/refresh-user").permitAll())
 	        .addFilterBefore(new JwtRefreshUserFilter(rsaKeyRecord, jwtTokenUtils), SecurityContextHolderFilter.class)
 	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 	       .build();
 	  }		  
-  
 
-	    /**
-	     * Logout security filter chain
-	     */
-	    @Order(5)
-	    @Bean
-	    public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
-	        return httpSecurity
-	                .securityMatcher(new AntPathRequestMatcher("/logout/**"))
-	                .csrf(AbstractHttpConfigurer::disable)
-	                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-	               
-	                .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord,jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
-	                .logout(logout -> logout
-	                        .logoutUrl("/logout")
-	                        .addLogoutHandler(logoutHandlerService)
-	                        
-	                )
-	                .exceptionHandling(ex -> {
-	                    log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to :{}",ex);
-	                    ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
-	                    ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
-	                })
-	                .build();
-	    }	  
-	  
-	  @Order(6)
+
+		/**
+		 * Logout security filter chain
+		 */
+	@Bean
+	@Order(5)
+	public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+		return httpSecurity
+				.securityMatcher(new AntPathRequestMatcher("/logout/**"))
+				.csrf(AbstractHttpConfigurer::disable)
+				.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+				.addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils),
+						UsernamePasswordAuthenticationFilter.class)
+				.logout(logout -> logout
+					.logoutUrl("/logout")
+					.invalidateHttpSession(true)
+					.clearAuthentication(true)
+					.deleteCookies("refresh_token", "Cookie2")
+//	                .addLogoutHandler(logoutHandlerService)
+					.logoutSuccessHandler((request, response, authentication) -> {
+					response.setStatus(HttpServletResponse.SC_OK);
+		}))
+			.exceptionHandling(ex -> {
+				log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to :{}", ex);
+				ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+				ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+			})
+			.build();
+		}
+
+
+		@Order(6)
 	    @Bean
 	    public SecurityFilterChain allCookiesSecurityFilterChain(HttpSecurity http) throws Exception {
 	        return http
@@ -221,9 +248,8 @@ public class SecurityConfig {
 	            })
 	            .build();
 	    }    		  
-	  
-	  
-	  
+
+
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -243,6 +269,87 @@ public class SecurityConfig {
 }
 
 
+
+//@Order(3)
+//@Bean
+//public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+//  return http
+//      .securityMatcher("/api/**") // Use `securityMatcher` for Spring Security 6.x
+//      .csrf(AbstractHttpConfigurer::disable)
+////      .authorizeHttpRequests(auth -> auth
+////          .requestMatchers("/api/**").hasAuthority("SCOPE_READ")  //.hasAnyRole("USER", "USUSER", "CAUSER") // .authenticated()
+////      )
+//      .authorizeHttpRequests(auth -> {
+//  			auth.requestMatchers(HttpMethod.GET, "/api/ca-buy-list","/api/us-buy-list", "/api/portfolios/*"); 
+//  			auth.requestMatchers(HttpMethod.POST, "/api/portfolios/*"); 
+//  			auth.requestMatchers(HttpMethod.PUT, "/api/portfolios/update"); 
+//  			auth.requestMatchers(HttpMethod.DELETE, "/api/portfolios/*");
+//  			auth.anyRequest().authenticated();
+//      })
+//      .exceptionHandling(ex -> {
+//          log.error("[SecurityConfig:apiSecurityFilterChain] Exception due to: {}", ex);
+//          ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//          ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+//      })
+//      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//      .httpBasic(Customizer.withDefaults())
+//      .build();
+//}
+
+
+//@Order(3)
+//@Bean
+//public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+//    return http
+//        .securityMatcher("/api/**") // Use `securityMatcher` for Spring Security 6.x
+//        .csrf(AbstractHttpConfigurer::disable)
+////        .authorizeHttpRequests(auth -> auth
+////            .requestMatchers("/api/**").hasAuthority("SCOPE_READ")  //.hasAnyRole("USER", "USUSER", "CAUSER") // .authenticated()
+////        )
+//        .authorizeHttpRequests(auth -> {
+//  			auth.requestMatchers(HttpMethod.GET, "/api/ca-buy-list","/api/us-buy-list", "/api/portfolios/*"); 
+//  			auth.requestMatchers(HttpMethod.POST, "/api/portfolios/*"); 
+//  			auth.requestMatchers(HttpMethod.PUT, "/api/portfolios/*"); 
+//  			auth.requestMatchers(HttpMethod.DELETE, "/api/portfolios/*");
+//  			auth.anyRequest().authenticated();
+//        })
+//        .exceptionHandling(ex -> {
+//            log.error("[SecurityConfig:apiSecurityFilterChain] Exception due to: {}", ex);
+//            ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//            ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+//        })
+//        .httpBasic(Customizer.withDefaults())
+//        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+//        .build();
+//}
+
+//.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+
+///**
+//* Logout security filter chain
+//*/
+//@Order(5)
+//@Bean
+//public SecurityFilterChain logoutSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
+//   return httpSecurity
+//           .securityMatcher(new AntPathRequestMatcher("/logout/**"))
+//           .csrf(AbstractHttpConfigurer::disable)
+//           .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+//          
+//           .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+//           .logout(logout -> logout
+//                   .logoutUrl("/logout")
+//                   .addLogoutHandler(logoutHandlerService)
+//                   
+//           )
+//           .exceptionHandling(ex -> {
+//               log.error("[SecurityConfig:logoutSecurityFilterChain] Exception due to :{}",ex);
+//               ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
+//               ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());
+//           })
+//           .build();
+//}	  
 
 ////Original
 //@Order(5)

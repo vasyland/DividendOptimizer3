@@ -1,6 +1,7 @@
 package com.stock.security.config;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -16,31 +17,36 @@ public class CorsConfig {
 	private String cors;
 
 	@Bean
-    public CorsFilter corsFilter() {
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
-        
-        // Allow the origin from which the request is coming
-        config.setAllowedOrigins(Arrays.asList("https://localhost:5004","http://localhost:5004","http://localhost:8440","http://localhost:9080","https://localhost:9443"));
+	 public CorsFilter corsFilter() {
 
-        // Allow specific HTTP methods (GET, POST, etc.)
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
-        
-        // Allow any headers necessary for your app (e.g., Content-Type, Authorization)
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
-        
-        // Allow credentials (optional)
-        config.setAllowCredentials(true);
-        
-        // Add exposed headers, if needed
-        config.setExposedHeaders(Arrays.asList("Authorization"));
-        
-        // Register the configuration for all paths
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        
-        return new CorsFilter(source);
-    }
+       CorsConfiguration config = new CorsConfiguration();
+       config.setAllowedOrigins(Arrays.asList("https://localhost:5004","http://localhost:5004","http://localhost:8440","http://localhost:9080","https://localhost:9443"));
+       config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+       config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+       config.setAllowCredentials(true);
+       config.setExposedHeaders(Arrays.asList("Authorization"));
+       UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+       source.registerCorsConfiguration("/**", config);
+       
+       return new CorsFilter(source);
+   }
+	
+	
+//	@Bean
+//    public CorsFilter corsFilter() {
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        CorsConfiguration config = new CorsConfiguration();
+//        
+//        config.setAllowedOrigins(List.of("https://localhost:5004"));
+//        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+//        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Access-Control-Allow-Headers", "Access-Control-Expose-Headers"));
+//        config.setAllowCredentials(true);
+//        config.setExposedHeaders(List.of("Authorization"));
+//        config.addAllowedMethod("*");
+//        config.setMaxAge(3600L);
+//        source.registerCorsConfiguration("/**", config);
+//        return new CorsFilter(source);
+//    }
 	
 //	@Bean
 //    public CorsFilter corsFilter() {
