@@ -1,6 +1,19 @@
 package com.stock.services;
 
+/**
+ * TransactionService.java
+ * 
+ * This service class handles the business logic for managing transactions,
+ * including creating, editing, deleting, and retrieving transactions.
+ * It also includes methods for recalculating holdings and getting current prices.
+ * 
+ * Holdings should be recalculated after each transaction to ensure	
+ * accurate portfolio values.
+ */
+
+
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -9,13 +22,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.stock.data.PortfolioSummaryDTO;
+import com.stock.exceptions.HoldingNotFoundException;
 import com.stock.exceptions.UnauthorizedPortfolioAccessException;
 import com.stock.model.CurrentPrice;
+import com.stock.model.Holding;
 import com.stock.model.Portfolio;
 import com.stock.model.Transaction;
 import com.stock.model.TransactionCreateRequest;
 import com.stock.model.TransactionType;
 import com.stock.repositories.CurrentPriceRepository;
+import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.TransactionRepository;
 
@@ -29,18 +46,24 @@ public class TransactionService {
 
 	private final TransactionRepository transactionRepository;
 	private final PortfolioRepository portfolioRepository;
+	private final HoldingRepository holdingRepository;
 	private final UserService userService;
 	private final HoldingsService holdingsService;
 	private final CurrentPriceRepository currentPriceRepository;
+//	private final PortfolioSummaryService portfolioSummaryService;
+	private final IncrementalPortfolioSummaryService incrementalPortfolioSummaryService;
+	private final IncrementalHoldingsService incrementalHoldingsService;
+	
+	private final IncrementalPortfolioSummaryUpdater incrementalPortfolioSummaryUpdater;
 	
 	/**
      * Save PortfolioTrade (both create and update)
      * @param p
      * @return
      */
-    public Transaction createTransaction(TransactionCreateRequest p) {
+    public Transaction createTransaction(TransactionCreateRequest tx) {
     	
-    	// Check if the portfolio exists for the current user
+    	// Check if a portfolio exists for the current user
     	String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
     	log.info("[TransactionService:createTransaction] Current Username: {}", currentUsername);
 
@@ -48,7 +71,7 @@ public class TransactionService {
     	Long currentUserId = userService.getCurrentUserId();
     	log.info("[TransactionService:createTransaction] Current User ID: {}", currentUserId);
         
-        Optional<Portfolio> portfolioOptional = portfolioRepository.findById(p.getPortfolioId());
+        Optional<Portfolio> portfolioOptional = portfolioRepository.findById(tx.getPortfolioId());
         if (portfolioOptional.isEmpty()) {
         	throw new IllegalArgumentException("Portfolio not found or does not belong to this user.");
         }
@@ -61,25 +84,65 @@ public class TransactionService {
 		}
     	
 		Transaction transaction = new Transaction();
-		transaction.setSymbol(p.getSymbol());
-		transaction.setShares(p.getShares());
-		transaction.setPrice(p.getPrice());
+		transaction.setSymbol(tx.getSymbol());
+		transaction.setShares(tx.getShares());
+		transaction.setPrice(tx.getPrice());
     	
     	Portfolio temp = new Portfolio();
-    	temp.setId(p.getPortfolioId());
+    	temp.setId(tx.getPortfolioId());
     	
     	transaction.setPortfolio(temp);
-    	transaction.setCommissions(p.getCommissions());
-    	transaction.setCurrency(p.getCurrency());
-    	transaction.setTransactionType(p.getTransactionType());
-    	transaction.setTransactionDate(p.getTransactionDate());
-    	transaction.setNote(p.getNote());
+    	transaction.setCommissions(tx.getCommissions());
+    	transaction.setCurrency(tx.getCurrency());
+    	transaction.setTransactionType(tx.getTransactionType());
+    	transaction.setTransactionDate(tx.getTransactionDate());
+    	transaction.setNote(tx.getNote());
     	
+    	// Get holding by portfolio id and by transaction symbol 
+    	Optional<Holding> holdingOpt = holdingRepository.findByPortfolioIdAndSymbol(tx.getPortfolioId(), tx.getSymbol());
+    	
+    	if (tx.getTransactionType() == TransactionType.SELL) {
+    		
+    		if (holdingOpt.isEmpty()) {
+    		    throw new HoldingNotFoundException("No holding found for symbol: " + tx.getSymbol() + " to create a SELL transaction.");
+    		}
+    		
+    	    Holding holding = holdingOpt.get();
+
+    	    BigDecimal txValue = tx.getPrice().multiply(BigDecimal.valueOf(tx.getShares()));
+    	    log.info("[TransactionService:createTransaction] Transaction value: {}", txValue);
+
+    	    BigDecimal avgCost = holding.getAvgCostPerShare();
+    	    log.info("[TransactionService:createTransaction] Average cost: {}", avgCost);
+
+    	    BigDecimal costBasis = avgCost.multiply(BigDecimal.valueOf(tx.getShares()));
+    	    log.info("[TransactionService:createTransaction] Cost basis: {}", costBasis);
+
+    	    BigDecimal commissions = tx.getCommissions() != null ? tx.getCommissions() : BigDecimal.ZERO;
+
+    	    BigDecimal pnl = txValue.subtract(costBasis).subtract(commissions).setScale(2, RoundingMode.HALF_UP);
+    	    log.info("[TransactionService:createTransaction] PnL: {}", pnl);
+
+    	    transaction.setRealizedPnl(pnl);
+    	}
+
+
     	Transaction savedTransaction = transactionRepository.save(transaction);
-//        holdingsService.recalculateHoldingForSymbol(transaction.getPortfolio().getId(), transaction.getSymbol());
-        
-        holdingsService.recalculateHoldingsForPortfolio(transaction.getPortfolio().getId());
-        
+    	log.info("[TransactionService:createTransaction] Transaction saved: {}", savedTransaction);
+    	
+    	// Recalculate holdings for the portfolio using all transactions 
+        //holdingsService.recalculateHoldingsForPortfolio(transaction.getPortfolio().getId());
+    	incrementalHoldingsService.applyNewTransaction(savedTransaction);
+    	
+        // Update portfolio cash after summary calculation
+//     	portfolioSummaryService.updatePortfolioCash(tx.getPortfolioId());
+    	PortfolioSummaryDTO psDTO = incrementalPortfolioSummaryService.calculatePortfolioSummary(tx.getPortfolioId());
+    	log.info("[TransactionService:createTransaction] Portfolio summary - getMarketValue(): {}", psDTO.getMarketValue());
+    	log.info("[TransactionService:createTransaction] Portfolio summary - getTotalValue(): {}", psDTO.getTotalValue());
+    	log.info("[TransactionService:createTransaction] Portfolio summary - getUnrealizedPnL(): {}", psDTO.getUnrealizedPnL());
+     	     	
+        // Update portfolio summary after transaction
+     	incrementalPortfolioSummaryUpdater.applyTransaction(savedTransaction);
         return savedTransaction;
 //        return transactionRepository.save(transaction);
     }
@@ -222,7 +285,11 @@ public class TransactionService {
 		return transactionRepository.findByPortfolioId(portfolioId);
 	}
 	
-	
+	/**
+	 * Get the latest price for a symbol
+	 * @param symbol
+	 * @return
+	 */
 	public CurrentPrice getSymbolCurrentPrice(String symbol) {
 		CurrentPrice currentPrice = currentPriceRepository.findTopBySymbolOrderByCreatedOnDesc(symbol);
 		if (currentPrice == null) {
@@ -230,4 +297,17 @@ public class TransactionService {
 		}
 		return currentPrice;
 	}
+	
+	
+	/**
+	 * Get the latest prices for a list of symbols
+	 * @param symbols
+	 * @return
+	 */
+	public List<CurrentPrice> getLatestPricesForSymbols(List<String> symbols) {
+        if (symbols == null || symbols.isEmpty()) {
+            return List.of();
+        }
+        return currentPriceRepository.findLatestPricesForSymbols(symbols);
+    }
 }

@@ -6,16 +6,12 @@ SpringBoot, REST, Spring Security, JWT
 July 10, 2024: branch J10-Security - fixed issues with secrurity configurations
 
 
-
 ###Tables used by application
 ```
 1. user_info, user_info_seq - user information, encrypted passwords, and role.
    There are two roles ROLE_USER, ROLE_ADMIN. ROLE_ADMIN is not used yet.
 
 ```
-
-
-
 
 ###Setting SSL Communication
 ```

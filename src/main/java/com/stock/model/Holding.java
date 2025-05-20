@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "holdings", uniqueConstraints = {
+@Table(name = "holding", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"portfolio_id", "symbol"})
 })
 @Getter
@@ -36,6 +36,9 @@ public class Holding {
 
     @Column(name = "book_cost", nullable = false, precision = 10, scale = 2)
     private BigDecimal bookCost;
+    
+    @Column(name = "realized_pnl")
+    private BigDecimal realizedPnL;
 
     @Column(name = "currency", nullable = false, length = 3)
     private String currency;

@@ -119,10 +119,6 @@ CREATE TABLE `weather_forecast` (
 
 /** ============================================================================ */
 
-
-
-
-
 DROP TABLE `marketing_symbol_status`;
 CREATE TABLE `marketing_symbol_status` (
   `symbol` varchar(10) NOT NULL COMMENT 'Stock ticker. TSX with .TO',
@@ -176,61 +172,85 @@ use golem;
 drop table portfolio_trades;
 drop table portfolios;
 
-CREATE TABLE portfolios (
+CREATE TABLE portfolio (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id         BIGINT NOT NULL,
     name            VARCHAR(100) NOT NULL,  -- Portfolio name
-    initial_amount  DECIMAL(15,2) NOT NULL, -- Initial allocated amount
+    initial_cash  DECIMAL(15,2) NOT NULL, -- Initial allocated amount
+    current_cash    DECIMAL(15, 2) DEFAULT 0.00,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Record creation timestamp
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Auto-update timestamp
     -- Foreign Key Constraint linking to `user_info`
-    CONSTRAINT fk_portfolios_user FOREIGN KEY (user_id) REFERENCES user_info(id) ON DELETE CASCADE
+    CONSTRAINT fk_portfolio_user FOREIGN KEY (user_id) REFERENCES user_info(id) ON DELETE CASCADE
 );
 
-
--- Holdings
-CREATE TABLE holdings (
-    id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
-    portfolio_id        BIGINT NOT NULL,
-    symbol              VARCHAR(10) NOT NULL,
-    shares              INT UNSIGNED NOT NULL,
-    avg_cost_per_share  DECIMAL(10,2) NOT NULL,
-    book_cost           DECIMAL(10,2) NOT NULL,
-    currency			VARCHAR(3) NOT NULL,
-    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-    -- Ensure each symbol appears only once per portfolio
-    UNIQUE(portfolio_id, symbol),
-
-    -- Foreign key constraint
-    CONSTRAINT fk_holdings_portfolio 
-        FOREIGN KEY (portfolio_id) 
-        REFERENCES portfolios(id) 
-        ON DELETE CASCADE
-);
-
-
-
-use golem;
-drop table transactions;
 -- Transactions
-CREATE TABLE transactions (
+CREATE TABLE transaction (
     id            BIGINT AUTO_INCREMENT PRIMARY KEY,
     portfolio_id  BIGINT NOT NULL,
     symbol        VARCHAR(10) NOT NULL,
     shares        INT UNSIGNED NOT NULL,
     price 		  DECIMAL(10,2) NOT NULL,
     commissions   DECIMAL(5,2) NOT NULL,
+    realized_pnl  DECIMAL(15,2),
     currency      VARCHAR(5) NOT NULL,
     transaction_type VARCHAR(5) NOT NULL,
     transaction_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Record creation timestamp
-    note         VARCHAR(120) NOT NULL,
+    note          VARCHAR(120) NOT NULL,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Record creation timestamp
     updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Auto-update timestamp
     -- Foreign Key Constraints
-    CONSTRAINT fk_transactions_portfolio FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+    CONSTRAINT fk_transaction_portfolio FOREIGN KEY (portfolio_id) REFERENCES portfolio(id) ON DELETE CASCADE
 );
+
+
+-- Portfolio Summary
+CREATE TABLE portfolio_summary (
+    portfolio_id BIGINT PRIMARY KEY,
+    total_market_value DECIMAL(15, 2),
+    cash DECIMAL(15, 2),
+    total_value DECIMAL(15, 2),
+    realized_pnl DECIMAL(15, 2),
+    unrealized_pnl DECIMAL(15, 2),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (portfolio_id) REFERENCES portfolio(id) ON DELETE CASCADE
+);
+
+
+-- Holdings
+CREATE TABLE holding (
+    id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+    portfolio_id        BIGINT NOT NULL,
+    symbol              VARCHAR(10) NOT NULL,
+    shares              INT UNSIGNED NOT NULL,
+    avg_cost_per_share  DECIMAL(10,2) NOT NULL,
+    book_cost           DECIMAL(10,2) NOT NULL,
+    realized_pnl 		DECIMAL(15, 2),
+    currency			VARCHAR(3) NOT NULL,
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    -- Ensure each symbol appears only once per portfolio
+    UNIQUE(portfolio_id, symbol),
+    -- Foreign key constraint
+    CONSTRAINT fk_holding_portfolio FOREIGN KEY (portfolio_id)  REFERENCES portfolio(id) ON DELETE CASCADE
+);
+
+
+
+
+drop table money_transfers;
+CREATE TABLE money_transfers (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    portfolio_id    BIGINT NOT NULL,
+    transfer_type   VARCHAR(1) NOT NULL,  -- deposit, withdrawal
+    amount          DECIMAL(15,2) NOT NULL, -- Initial allocated amount
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Record creation timestamp
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Auto-update timestamp
+    -- Foreign Key Constraint linking to `user_info`
+    CONSTRAINT fk_money_transfers_portfolio FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+);
+
+
 
 
 -- https://fmpcloud.io/api/v3/symbol/NASDAQ?apikey=ATt4kh10v7qTrdhbmSvWWOJmpYLgMIy5
@@ -269,11 +289,21 @@ CREATE TABLE fmp_data (
 use golem;
 drop table listed_companies;
 CREATE TABLE listed_companies (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    symbol VARCHAR(11) NOT NULL UNIQUE, -- review size later
-    name VARCHAR(100),  -- review size later
+    symbol VARCHAR(11) PRIMARY KEY,  -- symbol becomes the primary key
+    name VARCHAR(100),
     marketcap BIGINT,
     exchange VARCHAR(6),
-     -- Optional: Add index on symbol for faster lookups
-    INDEX idx_listed_symbol (symbol)
+    INDEX idx_listed_name (name) -- Optional: index name if you often search by it
 );
+
+
+CREATE TABLE current_price (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    symbol VARCHAR(11) NOT NULL,
+	price DECIMAL(10, 4),
+	price_change DECIMAL(8, 4),
+    created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     -- Optional: Add index on symbol for faster lookups
+    INDEX idx_price_symbol (symbol)
+);
+

@@ -40,6 +40,7 @@ public class HoldingsService {
 
         int totalShares = 0;
         BigDecimal totalCost = BigDecimal.ZERO;
+        BigDecimal realizedPnL = BigDecimal.ZERO;
         String currency = transactions.get(0).getCurrency();
 
         for (Transaction tx : transactions) {

@@ -102,7 +102,7 @@ public class SecurityConfig {
 //                )
 //                .build();
 //    }
-
+	
 	@Order(1)
 	@Bean
 	public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
@@ -173,10 +173,10 @@ public class SecurityConfig {
 	        .securityMatcher("/api/**")
 	        .csrf(AbstractHttpConfigurer::disable)
 	        .authorizeHttpRequests(auth -> auth
-	            .requestMatchers(HttpMethod.GET, "/api/ca-buy-list", "/api/us-buy-list", "/api/portfolios/*", "/api/portfolio-trades/*").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
-	            .requestMatchers(HttpMethod.POST,  "/api/portfolios", "/api/portfolios/*", "/api/portfolio-trade/*").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
+	            .requestMatchers(HttpMethod.GET, "/api/ca-buy-list", "/api/us-buy-list", "/api/portfolios/**", "/api/portfolio-trades/*", "/api/money-transfers/**").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
+	            .requestMatchers(HttpMethod.POST,  "/api/portfolios", "/api/portfolios/**", "/api/portfolio-trade/**", "/api/money-transfers/**").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
 	            .requestMatchers(HttpMethod.PUT, "/api/portfolios").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
-	            .requestMatchers(HttpMethod.DELETE, "/api/portfolios/*").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
+	            .requestMatchers(HttpMethod.DELETE, "/api/portfolios/*", "/api/money-transfers/**").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
 	            .anyRequest().authenticated()
 	        )
 	        .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
@@ -249,6 +249,26 @@ public class SecurityConfig {
 	            .build();
 	    }    		  
 
+		/** 
+		 * Check JwtSecurity Filter to set free points
+		 * @param http
+		 * @return
+		 * @throws Exception
+		 */
+		@Order(7)
+		@Bean
+		public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
+		    return http
+		        .csrf(AbstractHttpConfigurer::disable)
+//		        .securityMatcher("/free/free-ca-buy-list", "/free/free-us-buy-list", "/free/volatile-days", "/free/marketing-ca-list", "/free/marketing-us-list")
+		        .securityMatcher("/free/**")
+		        .authorizeHttpRequests(auth -> auth
+//		            .requestMatchers(HttpMethod.GET, "/free/free-ca-buy-list").permitAll()
+		            .requestMatchers(HttpMethod.GET, "/free/**").permitAll()
+		        )
+		        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+		        .build();
+		}
 
     @Bean
     PasswordEncoder passwordEncoder() {

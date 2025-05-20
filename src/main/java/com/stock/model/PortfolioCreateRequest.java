@@ -13,6 +13,7 @@ public class PortfolioCreateRequest {
 
 //    private Long userId;
     private String name;
-    private double initialAmount;
+    private double initialCash;
+    private double currentCash;
 
 }

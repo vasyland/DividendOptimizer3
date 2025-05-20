@@ -34,5 +34,12 @@ public class GlobalExceptionHandler {
         log.error("[GlobalExceptionHandler] Unexpected error: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
     }
+    
+    @ExceptionHandler(HoldingNotFoundException.class)
+    public ResponseEntity<String> handleHoldingNotFound(HoldingNotFoundException ex) {
+        log.error("[GlobalExceptionHandler] Holding not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
 }
 

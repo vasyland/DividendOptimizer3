@@ -16,6 +16,7 @@ public class PortfolioUpdateRequest {
 
 	private Long id;
 	private String name;
-	private BigDecimal initialAmount;
+	private BigDecimal initialCash;
+	private BigDecimal currentCash;
 	
 }

@@ -116,4 +116,11 @@ public class TransactionController {
 		CurrentPrice symbolPrice = transactionService.getSymbolCurrentPrice(request.getSymbol());
 	 	return new ResponseEntity<>(symbolPrice, HttpStatus.CREATED);
 	}
+	
+	
+	@GetMapping("/portfolio/{portfolioId}/snow-transactions")
+	public ResponseEntity<List<Transaction>> getSnowTransactions(@PathVariable("portfolioId") Long portfolioId) {
+			List<Transaction> transactions = transactionService.getTransactions(portfolioId);	
+	    	return new ResponseEntity<>(transactions, HttpStatus.OK);
+	 }
 }

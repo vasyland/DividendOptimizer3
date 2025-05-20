@@ -1,12 +1,21 @@
 package com.stock.services;
 
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.stock.exceptions.DuplicatePortfolioException;
 import com.stock.exceptions.UnauthorizedPortfolioAccessException;
 import com.stock.model.Portfolio;
+import com.stock.model.PortfolioSummary;
 import com.stock.repositories.PortfolioRepository;
-import com.stock.security.config.RSAKeyRecord;
-import com.stock.security.config.jwt.JwtAccessTokenFilter;
+import com.stock.repositories.PortfolioSummaryRepository;
 import com.stock.security.config.jwt.JwtTokenUtils;
 import com.stock.security.entity.UserInfo;
 import com.stock.security.repo.UserInfoRepository;
@@ -14,21 +23,13 @@ import com.stock.security.repo.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
+    private final PortfolioSummaryRepository portfolioSummaryRepository;
     private final UserInfoRepository userInfoRepository;
     private final UserService userService;
     private JwtTokenUtils jwtTokenUtils;
@@ -58,7 +59,9 @@ public class PortfolioService {
     
     // Create a new portfolio for a user
     @Transactional
-    public Portfolio createPortfolio(String name, double initialAmount) {
+    public Portfolio createPortfolio(String name, 
+    		double initialCash, 
+    		double currentCash) {
     	
     	String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
     	log.info("[PortfolioService:createPortfolio] Current Username: {}", currentUsername);
@@ -80,9 +83,25 @@ public class PortfolioService {
         Portfolio portfolio = new Portfolio();
         portfolio. setUser(user);
         portfolio.setName(name);
-        portfolio.setInitialAmount(new BigDecimal(initialAmount));
+        portfolio.setInitialCash(new BigDecimal(initialCash));
+        portfolio.setCurrentCash(new BigDecimal(currentCash));
+        
+        Portfolio savedPortfolio = portfolioRepository.save(portfolio); // generates ID
+        
+     // Create corresponding PortfolioSummary
+        PortfolioSummary summary = new PortfolioSummary();
+        summary.setPortfolio(savedPortfolio);
+//        summary.setPortfolioId(savedPortfolio.getId());
+        summary.setCash(BigDecimal.valueOf(currentCash)); // Start with currentCash
+        summary.setRealizedPnL(BigDecimal.ZERO);
+        summary.setUnrealizedPnL(BigDecimal.ZERO);
+        summary.setTotalMarketValue(BigDecimal.ZERO);
+        summary.setTotalValue(BigDecimal.valueOf(currentCash)); // Initial total value
+        summary.setUpdatedAt(LocalDateTime.now());
 
-        return portfolioRepository.save(portfolio);
+        portfolioSummaryRepository.save(summary);
+        
+        return savedPortfolio;
     }
 
     
@@ -91,7 +110,8 @@ public class PortfolioService {
     public Portfolio editPortfolio(
     		Long portfolioId, 
     		String name, 
-    		BigDecimal initialAmount) {
+    		BigDecimal initialCash,
+    		BigDecimal currentCash) {
     	
     	String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
     	log.info("[PortfolioService:editPortfolio] Current Username: {}", currentUsername);
@@ -114,7 +134,8 @@ public class PortfolioService {
 
         Portfolio portfolio = existingPortfolio.get();
         portfolio.setName(name);
-        portfolio.setInitialAmount(initialAmount);
+        portfolio.setInitialCash(initialCash);
+        portfolio.setCurrentCash(currentCash);
 
         return portfolioRepository.save(portfolio);
     }

@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.stock.security.entity.UserInfo;
 
 @Entity
-@Table(name = "portfolios")
+@Table(name = "portfolio")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -34,19 +34,18 @@ public class Portfolio {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "initial_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal initialAmount;
+    @Column(name = "initial_cash", nullable = false, precision = 15, scale = 2)
+    private BigDecimal initialCash;
 
+    @Column(name = "current_cash", nullable = false, precision = 15, scale = 2)
+    private BigDecimal currentCash;    
+    
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     @JsonIgnore
     private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<PortfolioTrade> trades;
 
     @PrePersist
     protected void onCreate() {
