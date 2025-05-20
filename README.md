@@ -1,4 +1,4 @@
-logout 2 check
+portfolio_calculation checked out
 
 # Dividend Optimizer 3
 
