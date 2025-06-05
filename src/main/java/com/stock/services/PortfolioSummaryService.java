@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
 import com.stock.data.HoldingPnLDto;
@@ -194,8 +193,8 @@ public class PortfolioSummaryService {
 		for (Portfolio p : portfolioList) {
 
 			int portfolioId = p.getId().intValue();
-			BigDecimal initialCash = p.getInitialCash();
-			BigDecimal currentCash = p.getCurrentCash();
+			BigDecimal initialCash = p.getInitialCash()	!= null ? p.getInitialCash() : BigDecimal.ZERO;
+			BigDecimal currentCash = p.getCurrentCash() != null ? p.getCurrentCash() : BigDecimal.ZERO;
 
 			// Find PnL and Current Cost from summary
 			Optional<PortfolioUnrealizedPnLDto> match = summary.stream()
@@ -208,8 +207,12 @@ public class PortfolioSummaryService {
 			BigDecimal realizedPnL = match.map(PortfolioUnrealizedPnLDto::getRealizedPnL).orElse(BigDecimal.ZERO);
 
 			// Calculate total portfolio state = current cash + current cost + PnL
-			BigDecimal totalValue = currentCash.add(currentCost).add(unrealizedPnL);
-
+			BigDecimal totalValue;
+			if (realizedPnL.equals(BigDecimal.ZERO) && unrealizedPnL.equals(BigDecimal.ZERO)) {
+				totalValue = initialCash;
+			} else {
+				totalValue = currentCash.add(currentCost).add(unrealizedPnL);
+			}
 //		    System.out.println("Portfolio " + portfolioId 
 //		        + ": Initial Cash = " + initialCash 
 //		        + ", Current Cash = " + currentCash 
@@ -227,10 +230,19 @@ public class PortfolioSummaryService {
 			pDto.setRealizedPnL(realizedPnL);
 			pDto.setUnrealizedPnL(unrealizedPnL);
 			pDto.setTotalValue(totalValue);
+
+			BigDecimal pnl = totalValue.subtract(initialCash);
+			BigDecimal pnlPercent = pnl.divide(initialCash, 10, RoundingMode.HALF_UP) // 10 is the intermediate scale
+				    .setScale(4, RoundingMode.HALF_UP); // Final scale for display
+
+			
 			pDto.setNumberOfholdings(numberOfHoldings);
 			pDto.setCreatedAt(p.getCreatedAt());
 			pDto.setUpdatedAt(p.getUpdatedAt());
-
+			
+			
+            pDto.setPnl(pnl.setScale(2, RoundingMode.HALF_UP));
+            pDto.setPnlPercent(pnlPercent);
 			portfolioDtoList.add(pDto);
 		}
 		return portfolioDtoList;

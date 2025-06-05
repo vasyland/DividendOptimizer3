@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.stock.data.SymbolStatusDto;
 import com.stock.model.MarketingStatusSymbol;
 import com.stock.model.SymbolStatus;
 
@@ -16,4 +17,11 @@ public interface SymbolService {
 	
 	List<MarketingStatusSymbol> getCaMarketingStatusSymbols();
 	List<MarketingStatusSymbol> getUsMarketingStatusSymbols();
+	
+	
+	//Using watch_symbol and surrent_price tables
+	List<SymbolStatusDto> getSymbolStatusList(String symbol);
+	
+	// Using status table
+	List<SymbolStatusDto> getCaSymbolStatusList();
 }

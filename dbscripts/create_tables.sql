@@ -307,3 +307,36 @@ CREATE TABLE current_price (
     INDEX idx_price_symbol (symbol)
 );
 
+-- outdated
+CREATE TABLE `symbol_status` (
+  `symbol` varchar(255) NOT NULL,  
+  `current_price` decimal(38,2) DEFAULT NULL,
+  `current_yield` decimal(38,2) DEFAULT NULL,
+  `lower_yield` decimal(38,2) DEFAULT NULL,
+  `upper_yield` decimal(38,2) DEFAULT NULL,
+  `allowed_buy_price` decimal(38,2) DEFAULT NULL,
+  `allowed_buy_yield` decimal(38,2) DEFAULT NULL,
+  `best_buy_price` decimal(38,2) DEFAULT NULL,
+  `quoterly_dividend_amount` decimal(38,2) DEFAULT NULL,
+  `sell_point_yield` decimal(38,2) DEFAULT NULL,
+  `updated_on` datetime(6) DEFAULT NULL,
+  `recommended_action` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`symbol`)
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

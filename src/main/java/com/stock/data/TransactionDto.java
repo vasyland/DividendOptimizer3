@@ -23,35 +23,24 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
 @Getter
 @Setter
 @NoArgsConstructor
 public class TransactionDto {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
-	@ManyToOne
-	private Portfolio portfolio; // References Portfolio entity
-
+	private Long portfolio;
 	private String symbol;
 	private Integer shares;
 	private BigDecimal price;
 	private BigDecimal commissions;
+	private BigDecimal bookCost;
+	private BigDecimal Pnl;
+	private BigDecimal PnlPercentage;
 	private String currency;
-	@Enumerated(EnumType.STRING)
-	private TransactionType transactionType;
+	private String transactionType;
 	private LocalDateTime transactionDate;
 	private String note;
-	@JsonIgnore
 	private LocalDateTime createdAt;
-	@JsonIgnore
 	private LocalDateTime updatedAt;
-
-	@PreUpdate
-	protected void onUpdate() {
-		updatedAt = LocalDateTime.now();
-	}
 }

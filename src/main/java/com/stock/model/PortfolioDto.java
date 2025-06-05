@@ -25,6 +25,8 @@ public class PortfolioDto {
     private BigDecimal realizedPnL;
     private BigDecimal unrealizedPnL;
     private BigDecimal totalValue;
+    private BigDecimal pnl;
+    private BigDecimal pnlPercent;
     private int numberOfholdings;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;    
