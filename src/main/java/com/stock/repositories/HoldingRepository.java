@@ -37,4 +37,9 @@ public interface HoldingRepository extends JpaRepository<Holding, Long> {
     @Override
     @Transactional
     void flush();
+    
+    
+    // Find all holdings for a specific user
+    @Query("SELECT h FROM Holding h WHERE h.portfolio.user.id = :userId")
+    List<Holding> findByUserId(@Param("userId") Long userId);
 }

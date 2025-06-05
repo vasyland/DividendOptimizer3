@@ -14,8 +14,10 @@ import com.stock.exceptions.DuplicatePortfolioException;
 import com.stock.exceptions.UnauthorizedPortfolioAccessException;
 import com.stock.model.Portfolio;
 import com.stock.model.PortfolioSummary;
+import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.PortfolioSummaryRepository;
+import com.stock.repositories.TransactionRepository;
 import com.stock.security.config.jwt.JwtTokenUtils;
 import com.stock.security.entity.UserInfo;
 import com.stock.security.repo.UserInfoRepository;
@@ -30,6 +32,8 @@ public class PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioSummaryRepository portfolioSummaryRepository;
+    private final HoldingRepository holdingRepository;
+    private final TransactionRepository transactionRepository;
     private final UserInfoRepository userInfoRepository;
     private final UserService userService;
     private JwtTokenUtils jwtTokenUtils;
@@ -164,6 +168,13 @@ public class PortfolioService {
             throw new IllegalArgumentException("Portfolio not found or does not belong to this user.");
         }
 
+        // Delete corresponding trades and portfolio summary
+        portfolioSummaryRepository.deleteByPortfolioId(portfolioId);
+       //Delete holdings associated with this portfolio
+        holdingRepository.deleteByPortfolioId(portfolioId);
+        // Delete all transactions associated with this portfolio
+        transactionRepository.deleteByPortfolioId(portfolioId);
+        // Finally, delete the portfolio itself                
         portfolioRepository.delete(existingPortfolio.get());
     }
 }

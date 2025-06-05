@@ -2,6 +2,7 @@ package com.stock.repositories;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -32,5 +33,5 @@ public interface CurrentPriceRepository extends JpaRepository<CurrentPrice, Inte
 	 @Query("SELECT c FROM CurrentPrice c WHERE c.symbol = :symbol ORDER BY c.createdOn DESC")
 	 Optional<CurrentPrice> findLatestBySymbol(String symbol);
 	 
-	 List<CurrentPrice> findBySymbolIn(List<String> symbols);
+	 List<CurrentPrice> findBySymbolIn(Set<String> symbols);
 }

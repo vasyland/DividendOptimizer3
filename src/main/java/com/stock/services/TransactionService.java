@@ -15,14 +15,19 @@ package com.stock.services;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.stock.data.PortfolioSummaryDTO;
+import com.stock.data.TransactionDto;
 import com.stock.exceptions.HoldingNotFoundException;
 import com.stock.exceptions.UnauthorizedPortfolioAccessException;
 import com.stock.model.CurrentPrice;
@@ -285,6 +290,7 @@ public class TransactionService {
 		return transactionRepository.findByPortfolioId(portfolioId);
 	}
 	
+		
 	/**
 	 * Get the latest price for a symbol
 	 * @param symbol
@@ -310,4 +316,91 @@ public class TransactionService {
         }
         return currentPriceRepository.findLatestPricesForSymbols(symbols);
     }
+	
+	
+	public List<TransactionDto> getTransactionDtos(Long portfolioId) {
+		List<Transaction> transactions = transactionRepository.findByPortfolioId(portfolioId);
+		if (transactions == null || transactions.isEmpty()) {
+			return List.of();
+		}
+		
+		// Group transactions by symbol
+        Map<String, List<Transaction>> symbolTransactions = transactions.stream()
+            .collect(Collectors.groupingBy(Transaction::getSymbol));
+
+        Set<String> symbols = this.extractDistinctSymbols(transactions);
+        
+        // Get current prices for the symbols
+     	List<CurrentPrice> priceList = currentPriceRepository.findBySymbolIn(symbols);
+     	
+     	List<TransactionDto> transactionDtos = new ArrayList<>();
+     	
+		for (Transaction t : transactions) {
+			
+			// Set the current price for each transaction
+			CurrentPrice price = priceList.stream()
+					.filter(m -> m.getSymbol().equals(t.getSymbol()))
+					.findFirst()
+					.orElse(null);
+			
+			if (price != null) {
+//				t.setCurrentPrice(price.getPrice());
+				TransactionDto tDto = new TransactionDto();
+				
+				tDto.setId(t.getId());
+				tDto.setPortfolio(t.getPortfolio().getId());
+				tDto.setSymbol(t.getSymbol());
+				tDto.setShares(t.getShares());
+				tDto.setPrice(t.getPrice());
+				tDto.setCommissions(t.getCommissions());
+				
+				BigDecimal bookCost = t.getPrice().multiply(BigDecimal.valueOf(t.getShares()))
+						.add(t.getCommissions() != null ? t.getCommissions() : BigDecimal.ZERO);
+				tDto.setBookCost(bookCost);
+
+				tDto.setCurrency(t.getCurrency());
+				tDto.setTransactionType(t.getTransactionType().name());
+				tDto.setTransactionDate(t.getTransactionDate());
+				tDto.setNote(t.getNote());
+				tDto.setCreatedAt(t.getCreatedAt());
+				tDto.setUpdatedAt(t.getUpdatedAt());
+				tDto.setPnl(t.getRealizedPnl() != null ? t.getRealizedPnl() : BigDecimal.ZERO);
+				
+				if (t.getTransactionType() == TransactionType.SELL && t.getRealizedPnl() != null) {
+					tDto.setPnl(t.getRealizedPnl());
+				} else {
+					BigDecimal unrealizedPnl = t.getShares() != null && price.getPrice() != null
+							? price.getPrice().multiply(BigDecimal.valueOf(t.getShares())).subtract(bookCost)
+							: BigDecimal.ZERO;
+					tDto.setPnl(unrealizedPnl);
+				}
+				
+				
+				tDto.setPnlPercentage(t.getRealizedPnl() != null && bookCost.compareTo(BigDecimal.ZERO) > 0
+						? t.getRealizedPnl().divide(bookCost, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
+						: BigDecimal.ZERO);
+				
+				transactionDtos.add(tDto);
+				
+			} else {
+				log.warn("[TransactionService:getTransactionDtos] No current price found for symbol: {}",
+						t.getSymbol());
+			}
+		}
+		return transactionDtos;
+	}
+	
+	
+	/**
+	 * Extract distinct symbols from a list of holdings
+	 * 
+	 * @param holdings
+	 * @return
+	 */
+	public Set<String> extractDistinctSymbols(List<Transaction> holdings) {
+		return holdings.stream()
+				.map(Transaction::getSymbol)
+				.filter(symbol -> symbol != null && !symbol.isBlank())
+				.collect(Collectors.toSet()); // Set ensures distinct values
+	}
 }

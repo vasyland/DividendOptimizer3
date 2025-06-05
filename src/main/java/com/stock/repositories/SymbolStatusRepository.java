@@ -20,4 +20,7 @@ public interface SymbolStatusRepository extends JpaRepository<SymbolStatus, Stri
 	@Query(value="select * from symbol_status where symbol not like '%.TO' and recommended_action in (:action)", nativeQuery=true)
 	List<SymbolStatus> getUsSymbolsByRecommendedAction(@Param("action") List<String> action);
 	
+	/* Getting CA companies only with .TO */
+	@Query(value="select * from symbol_status where symbol like '%.TO'", nativeQuery=true)
+	List<SymbolStatus> getCaSymbols();
 }

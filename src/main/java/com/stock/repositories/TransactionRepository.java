@@ -22,4 +22,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>{
 
  // Find transactions for a specific portfolio and symbol
     List<Transaction> findByPortfolioIdAndSymbol(Long portfolioId, String symbol);
+
+	void deleteByPortfolioId(Long portfolioId);
 }

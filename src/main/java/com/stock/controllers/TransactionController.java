@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stock.data.TransactionDto;
 import com.stock.model.CurrentPrice;
 import com.stock.model.CurrentPriceRequest;
 import com.stock.model.Transaction;
@@ -49,9 +50,16 @@ public class TransactionController {
 	 * @param portfolioId
 	 * @return
 	 */
+//	@GetMapping("/portfolio/{portfolioId}/transactions")
+//	public ResponseEntity<List<Transaction>> getTransactions(@PathVariable("portfolioId") Long portfolioId) {
+//			List<Transaction> transactions = transactionService.getTransactions(portfolioId);	
+//	    	return new ResponseEntity<>(transactions, HttpStatus.OK);
+//	 }
+	
+	
 	@GetMapping("/portfolio/{portfolioId}/transactions")
-	public ResponseEntity<List<Transaction>> getTransactions(@PathVariable("portfolioId") Long portfolioId) {
-			List<Transaction> transactions = transactionService.getTransactions(portfolioId);	
+	public ResponseEntity<List<TransactionDto>> getTransactions(@PathVariable("portfolioId") Long portfolioId) {
+			List<TransactionDto> transactions = transactionService.getTransactionDtos(portfolioId);	
 	    	return new ResponseEntity<>(transactions, HttpStatus.OK);
 	 }
 	

@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stock.data.HoldingPnLDto;
 import com.stock.data.PortfolioSummaryDTO;
 import com.stock.model.Portfolio;
 import com.stock.model.PortfolioCreateRequest;
+import com.stock.model.PortfolioDto;
 import com.stock.model.PortfolioUpdateRequest;
 import com.stock.services.HoldingsService;
 import com.stock.services.PortfolioService;
@@ -73,13 +75,19 @@ public class PortfolioController {
     }
        
     
+//    @CrossOrigin(origins = "https://localhost:5004")
+//    @GetMapping("/{userId}")
+//    public ResponseEntity<List<Portfolio>> getUserPortfoliosOriginal(@PathVariable("userId") Long userId) {
+//        List<Portfolio> portfolios = portfolioService.getUserPortfolios(userId);
+//        return new ResponseEntity<>(portfolios, HttpStatus.OK);
+//    }
+    
     @CrossOrigin(origins = "https://localhost:5004")
     @GetMapping("/{userId}")
-    public ResponseEntity<List<Portfolio>> getUserPortfolios(@PathVariable("userId") Long userId) {
-        List<Portfolio> portfolios = portfolioService.getUserPortfolios(userId);
+    public ResponseEntity<List<PortfolioDto>> getUserPortfolios(@PathVariable("userId") Long userId) {
+        List<PortfolioDto> portfolios = portfolioSummaryService.getUserPortfoliosData(userId);
         return new ResponseEntity<>(portfolios, HttpStatus.OK);
     }
-    
 
     /**
      * Edit an existing portfolio for the user (portfolioId is in the body)
@@ -141,11 +149,16 @@ public class PortfolioController {
     @PutMapping("/{portfolioId}/summary")
 	public ResponseEntity<PortfolioSummaryDTO> getPortfolioSumamry(@PathVariable("portfolioId") Long portfolioId) {
 		log.info("[PortfolioController:getPortfolioSumamry] Portfolio ID: {}", portfolioId);
-
 		PortfolioSummaryDTO p = portfolioSummaryService.calculatePortfolioSummary(portfolioId);
-		
-		
 		return ResponseEntity.ok(p);
+	}
+    
+    
+    @GetMapping("/{portfolioId}/holdings")
+	public ResponseEntity<?> getPortfolioHoldings(@PathVariable("portfolioId") Long portfolioId) {
+		log.info("[PortfolioController:recalculatePortfolioHoldings] Portfolio ID: {}", portfolioId);
+		List<HoldingPnLDto> holdings = portfolioSummaryService.getPortfolioHoldingsData(portfolioId);
+		return ResponseEntity.ok(holdings);
 	}
     
 }

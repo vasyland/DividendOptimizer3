@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.stock.data.SymbolStatusDto;
 import com.stock.model.Scenario;
 import com.stock.model.SymbolStatus;
 import com.stock.services.ScenarioService;
@@ -33,15 +34,22 @@ public class OptimizerController {
   @Autowired
   ScenarioService scenarioService;
  
+//Orig  @CrossOrigin(origins = "http://localhost:5004")
+//  @GetMapping("/ca-buy-list")
+//  public @ResponseBody List<SymbolStatus> getCaRecommendedBuySymbols() {
+//    return symbolService.getCaRecomendedBuySymbols();
+//  }
+  
   @CrossOrigin(origins = "http://localhost:5004")
   @GetMapping("/ca-buy-list")
-  public @ResponseBody List<SymbolStatus> getCaRecommendedBuySymbols() {
-    return symbolService.getCaRecomendedBuySymbols();
+  public List<SymbolStatusDto> getCaRecommendedBuySymbols() {  //@ResponseBody
+    return symbolService.getSymbolStatusList("TSX");
   }
+  
   
   @CrossOrigin(origins = "http://localhost:5004")
   @GetMapping("/us-buy-list")
-  public @ResponseBody List<SymbolStatus> getUsRecommendedBuySymbols() {
+  public List<SymbolStatus> getUsRecommendedBuySymbols() {  //@ResponseBody
 	return symbolService.getUsRecomendedBuySymbols();
   }
   
