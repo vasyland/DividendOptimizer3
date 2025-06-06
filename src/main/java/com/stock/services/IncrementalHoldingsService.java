@@ -12,8 +12,8 @@ import com.stock.model.TransactionType;
 import com.stock.repositories.HoldingRepository;
 
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -28,13 +28,18 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class IncrementalHoldingsService {
+	
+	private static final Logger log = LoggerFactory.getLogger(IncrementalHoldingsService.class);
 
     private final HoldingRepository holdingRepository;
+    
+    public IncrementalHoldingsService(HoldingRepository holdingRepository) {
+		super();
+		this.holdingRepository = holdingRepository;
+	}
 
-    @Transactional
+	@Transactional
     public void applyNewTransaction(Transaction tx) {
         adjustHolding(tx, true);
     }

@@ -25,13 +25,14 @@ import com.stock.repositories.SymbolNativeRepository;
 import com.stock.repositories.SymbolStatusRepository;
 import com.stock.repositories.WatchSymbolRepository;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class SymbolServiceImpl implements SymbolService {
+	
+	private static final Logger log = LoggerFactory.getLogger(SymbolServiceImpl.class);
+	
 	@Autowired
 	private WatchSymbolRepository watchSymbolRepository;
 	@Autowired
@@ -40,7 +41,17 @@ public class SymbolServiceImpl implements SymbolService {
 	private SymbolNativeRepository symbolNativeRepository1;
 	private SymbolStatusRepository symbolStatusRepository;
 	private MarketingSymbolStatusRepository marketingSymbolStatusRepository;
-
+	
+	public SymbolServiceImpl(WatchSymbolRepository watchSymbolRepository, CurrentPriceRepository currentPriceRepository,
+			SymbolNativeRepository symbolNativeRepository1, SymbolStatusRepository symbolStatusRepository,
+			MarketingSymbolStatusRepository marketingSymbolStatusRepository) {
+		super();
+		this.watchSymbolRepository = watchSymbolRepository;
+		this.currentPriceRepository = currentPriceRepository;
+		this.symbolNativeRepository1 = symbolNativeRepository1;
+		this.symbolStatusRepository = symbolStatusRepository;
+		this.marketingSymbolStatusRepository = marketingSymbolStatusRepository;
+	}
 
 	@Override
 	public List<String> getSymbols() {

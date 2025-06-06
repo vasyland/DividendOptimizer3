@@ -16,19 +16,30 @@ import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.PortfolioSummaryRepository;
 
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class IncrementalPortfolioSummaryUpdater {
+	
+	private static final Logger log = LoggerFactory.getLogger(IncrementalPortfolioSummaryUpdater.class);
+
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioSummaryRepository portfolioSummaryRepository;
     private final HoldingRepository holdingRepository;
     
-    /**
+    
+    
+    public IncrementalPortfolioSummaryUpdater(PortfolioRepository portfolioRepository,
+			PortfolioSummaryRepository portfolioSummaryRepository, HoldingRepository holdingRepository) {
+		super();
+		this.portfolioRepository = portfolioRepository;
+		this.portfolioSummaryRepository = portfolioSummaryRepository;
+		this.holdingRepository = holdingRepository;
+	}
+
+	/**
      * Apply a new transaction's effect on cash and realized PnL
      */
     @Transactional

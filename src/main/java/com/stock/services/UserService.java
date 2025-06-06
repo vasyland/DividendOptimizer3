@@ -9,20 +9,28 @@ import com.stock.security.entity.UserInfo;
 import com.stock.security.entity.UserSubscription;
 import com.stock.security.repo.UserInfoRepository;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class UserService {
 
+	private static final Logger log = LoggerFactory.getLogger(UserService.class);
+	
 	private final UserSubscriptionRepository userSubscriptionRepository;
 	private final UserInfoRepository userInfoRepository;
 	
+	
+	
+	public UserService(UserSubscriptionRepository userSubscriptionRepository, UserInfoRepository userInfoRepository) {
+		super();
+		this.userSubscriptionRepository = userSubscriptionRepository;
+		this.userInfoRepository = userInfoRepository;
+	}
+
 	public Optional<UserInfo> getUserInfo(String email) {
 		return userInfoRepository.findByEmailId(email);
 	}

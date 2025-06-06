@@ -1,10 +1,6 @@
 package com.stock.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -12,9 +8,6 @@ import java.time.LocalDateTime;
 @Table(name = "holding", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"portfolio_id", "symbol"})
 })
-@Getter
-@Setter
-@NoArgsConstructor
 public class Holding {
 
     @Id
@@ -59,4 +52,93 @@ public class Holding {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Portfolio getPortfolio() {
+		return portfolio;
+	}
+
+	public void setPortfolio(Portfolio portfolio) {
+		this.portfolio = portfolio;
+	}
+
+	public String getSymbol() {
+		return symbol;
+	}
+
+	public void setSymbol(String symbol) {
+		this.symbol = symbol;
+	}
+
+	public Integer getShares() {
+		return shares;
+	}
+
+	public void setShares(Integer shares) {
+		this.shares = shares;
+	}
+
+	public BigDecimal getAvgCostPerShare() {
+		return avgCostPerShare;
+	}
+
+	public void setAvgCostPerShare(BigDecimal avgCostPerShare) {
+		this.avgCostPerShare = avgCostPerShare;
+	}
+
+	public BigDecimal getBookCost() {
+		return bookCost;
+	}
+
+	public void setBookCost(BigDecimal bookCost) {
+		this.bookCost = bookCost;
+	}
+
+	public BigDecimal getRealizedPnL() {
+		return realizedPnL;
+	}
+
+	public void setRealizedPnL(BigDecimal realizedPnL) {
+		this.realizedPnL = realizedPnL;
+	}
+
+	public String getCurrency() {
+		return currency;
+	}
+
+	public void setCurrency(String currency) {
+		this.currency = currency;
+	}
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public LocalDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
+	}
+
+	@Override
+	public String toString() {
+		return "Holding [id=" + id + ", portfolio=" + portfolio + ", symbol=" + symbol + ", shares=" + shares
+				+ ", avgCostPerShare=" + avgCostPerShare + ", bookCost=" + bookCost + ", realizedPnL=" + realizedPnL
+				+ ", currency=" + currency + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
+	}
+    
+    
 }

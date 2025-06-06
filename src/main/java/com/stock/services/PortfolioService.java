@@ -22,13 +22,13 @@ import com.stock.security.config.jwt.JwtTokenUtils;
 import com.stock.security.entity.UserInfo;
 import com.stock.security.repo.UserInfoRepository;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class PortfolioService {
+	
+	private static final Logger log = LoggerFactory.getLogger(PortfolioService.class);
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioSummaryRepository portfolioSummaryRepository;
@@ -38,6 +38,23 @@ public class PortfolioService {
     private final UserService userService;
     private JwtTokenUtils jwtTokenUtils;
     
+    
+    
+public PortfolioService(PortfolioRepository portfolioRepository,
+			PortfolioSummaryRepository portfolioSummaryRepository, HoldingRepository holdingRepository,
+			TransactionRepository transactionRepository, UserInfoRepository userInfoRepository, UserService userService,
+			JwtTokenUtils jwtTokenUtils) {
+		super();
+		this.portfolioRepository = portfolioRepository;
+		this.portfolioSummaryRepository = portfolioSummaryRepository;
+		this.holdingRepository = holdingRepository;
+		this.transactionRepository = transactionRepository;
+		this.userInfoRepository = userInfoRepository;
+		this.userService = userService;
+		this.jwtTokenUtils = jwtTokenUtils;
+	}
+
+
 //    @Autowired
 //    public PortfolioService(PortfolioRepository portfolioRepository, UserInfoRepository userInfoRepository) {
 //        this.portfolioRepository = portfolioRepository;

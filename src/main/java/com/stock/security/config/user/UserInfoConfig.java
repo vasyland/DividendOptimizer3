@@ -19,14 +19,17 @@ import lombok.RequiredArgsConstructor;
  * @author atquil
  * This is Authentication Object
  */
-@RequiredArgsConstructor
 public class UserInfoConfig implements UserDetails {
 
 	private static final long serialVersionUID = 1L;
 	
 	private final UserInfo userInfoEntity;
-    
 	
+	public UserInfoConfig(UserInfo userInfoEntity) {
+		super();
+		this.userInfoEntity = userInfoEntity;
+	}
+
 	/**
 	 * Extreacting User ROles as a Collection
 	 */

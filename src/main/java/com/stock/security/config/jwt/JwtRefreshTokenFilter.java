@@ -24,21 +24,28 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * @author atquil
- */
-@RequiredArgsConstructor
-@Slf4j
 public class JwtRefreshTokenFilter extends OncePerRequestFilter {
+	
+	private static final Logger log = LoggerFactory.getLogger(JwtRefreshTokenFilter.class);
 
     private final RSAKeyRecord rsaKeyRecord;
     private final JwtTokenUtils jwtTokenUtils;
     private final RefreshTokenRepo refreshTokenRepo;
 
-    @Override
+    
+    public JwtRefreshTokenFilter(RSAKeyRecord rsaKeyRecord, JwtTokenUtils jwtTokenUtils,
+			RefreshTokenRepo refreshTokenRepo) {
+		super();
+		this.rsaKeyRecord = rsaKeyRecord;
+		this.jwtTokenUtils = jwtTokenUtils;
+		this.refreshTokenRepo = refreshTokenRepo;
+	}
+
+
+	@Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {

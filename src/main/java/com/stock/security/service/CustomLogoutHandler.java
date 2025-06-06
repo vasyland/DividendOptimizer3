@@ -3,26 +3,28 @@ package com.stock.security.service;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Component;
-
-import com.stock.security.config.RSAKeyRecord;
-import com.stock.security.config.SecurityConfig;
-import com.stock.security.config.jwt.JwtTokenUtils;
-import com.stock.security.config.user.UserInfoManagerConfig;
-import com.stock.security.repo.RefreshTokenRepo;
 import com.stock.security.util.CookieService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class CustomLogoutHandler implements LogoutHandler {
+	
+	private static final Logger log = LoggerFactory.getLogger(CustomLogoutHandler.class);
 
 	private final CookieService cookieService;
+	
+	
+
+	public CustomLogoutHandler(CookieService cookieService) {
+		super();
+		this.cookieService = cookieService;
+	}
 
 	@Override
 	public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {

@@ -24,23 +24,30 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author atquil
  */
 @RestController
 @CrossOrigin
-@RequiredArgsConstructor
-@Slf4j
 public class AuthController {
 
+	private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+	
     private final AuthService authService;
     private final LogoutHandlerService logoutHandlerService;
     
     
-    @PostMapping("/sign-in")
+    public AuthController(AuthService authService, LogoutHandlerService logoutHandlerService) {
+		super();
+		this.authService = authService;
+		this.logoutHandlerService = logoutHandlerService;
+	}
+
+
+	@PostMapping("/sign-in")
     public ResponseEntity<?> authenticateUser(Authentication authentication, HttpServletResponse response){
     	log.info("#1 /sigh-in authentication.getName() = " + authentication.getName());
     	log.info("#2 /sigh-in authentication.getCredentials() = " + authentication.getCredentials());

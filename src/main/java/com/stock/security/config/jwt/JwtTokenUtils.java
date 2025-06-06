@@ -15,21 +15,25 @@ import com.stock.security.config.user.UserInfoConfig;
 import com.stock.security.entity.UserSubscription;
 import com.stock.security.repo.UserInfoRepository;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * @author atquil
- */
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class JwtTokenUtils {
+	
+	private static final Logger log = LoggerFactory.getLogger(JwtTokenUtils.class);
 
 	private final UserInfoRepository userInfoRepo;
 	private final UserSubscriptionRepository userSubscriptionRepository;
 	
-    public String getUserName(Jwt jwtToken){
+    public JwtTokenUtils(UserInfoRepository userInfoRepo, UserSubscriptionRepository userSubscriptionRepository) {
+		super();
+		this.userInfoRepo = userInfoRepo;
+		this.userSubscriptionRepository = userSubscriptionRepository;
+	}
+
+
+	public String getUserName(Jwt jwtToken){
         return jwtToken.getSubject();
     }
 

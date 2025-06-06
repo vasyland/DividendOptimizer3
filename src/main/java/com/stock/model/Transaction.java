@@ -17,15 +17,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "transaction")
-@Getter
-@Setter
-@NoArgsConstructor
 public class Transaction {
 
 	@Id
@@ -86,4 +80,118 @@ public class Transaction {
 	protected void onUpdate() {
 		updatedAt = LocalDateTime.now();
 	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Portfolio getPortfolio() {
+		return portfolio;
+	}
+
+	public void setPortfolio(Portfolio portfolio) {
+		this.portfolio = portfolio;
+	}
+
+	public String getSymbol() {
+		return symbol;
+	}
+
+	public void setSymbol(String symbol) {
+		this.symbol = symbol;
+	}
+
+	public Integer getShares() {
+		return shares;
+	}
+
+	public void setShares(Integer shares) {
+		this.shares = shares;
+	}
+
+	public BigDecimal getPrice() {
+		return price;
+	}
+
+	public void setPrice(BigDecimal price) {
+		this.price = price;
+	}
+
+	public BigDecimal getCommissions() {
+		return commissions;
+	}
+
+	public void setCommissions(BigDecimal commissions) {
+		this.commissions = commissions;
+	}
+
+	public BigDecimal getRealizedPnl() {
+		return realizedPnl;
+	}
+
+	public void setRealizedPnl(BigDecimal realizedPnl) {
+		this.realizedPnl = realizedPnl;
+	}
+
+	public String getCurrency() {
+		return currency;
+	}
+
+	public void setCurrency(String currency) {
+		this.currency = currency;
+	}
+
+	public TransactionType getTransactionType() {
+		return transactionType;
+	}
+
+	public void setTransactionType(TransactionType transactionType) {
+		this.transactionType = transactionType;
+	}
+
+	public LocalDateTime getTransactionDate() {
+		return transactionDate;
+	}
+
+	public void setTransactionDate(LocalDateTime transactionDate) {
+		this.transactionDate = transactionDate;
+	}
+
+	public String getNote() {
+		return note;
+	}
+
+	public void setNote(String note) {
+		this.note = note;
+	}
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public LocalDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
+	}
+
+	@Override
+	public String toString() {
+		return "Transaction [id=" + id + ", portfolio=" + portfolio + ", symbol=" + symbol + ", shares=" + shares
+				+ ", price=" + price + ", commissions=" + commissions + ", realizedPnl=" + realizedPnl + ", currency="
+				+ currency + ", transactionType=" + transactionType + ", transactionDate=" + transactionDate + ", note="
+				+ note + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
+	}
+	
+	
 }

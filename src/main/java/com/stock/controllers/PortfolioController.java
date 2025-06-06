@@ -27,21 +27,32 @@ import com.stock.services.PortfolioService;
 import com.stock.services.PortfolioSummaryService;
 
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @CrossOrigin(origins = "https://localhost:5004")
 @RestController
 @RequestMapping("/api/portfolio")
-@RequiredArgsConstructor
-@Slf4j
 public class PortfolioController {
+	
+	private static final Logger log = LoggerFactory.getLogger(PortfolioController.class);
 
     private final PortfolioService portfolioService;
     private final HoldingsService holdingsService;
     private final PortfolioSummaryService portfolioSummaryService;
     
-    /**
+    
+    
+    public PortfolioController(PortfolioService portfolioService, HoldingsService holdingsService,
+			PortfolioSummaryService portfolioSummaryService) {
+		super();
+		this.portfolioService = portfolioService;
+		this.holdingsService = holdingsService;
+		this.portfolioSummaryService = portfolioSummaryService;
+	}
+
+
+	/**
      * Create a new Portfolio for the user (userId is now in the body)
      * @param portfolioRequest
      * @return

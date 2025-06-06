@@ -22,17 +22,17 @@ import com.stock.services.ListedCompanyService;
 import com.stock.services.PortfolioService;
 import com.stock.services.SymbolService;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 //@CrossOrigin("*")
 //@CrossOrigin(origins = "*")
 //@CrossOrigin(origins = "http://localhost:5003")
 @RequestMapping("/free")
-@RequiredArgsConstructor
-@Slf4j
 public class FreePointsController {
+	
+	private static final Logger log = LoggerFactory.getLogger(FreePointsController.class);
 
 	private static final String template = "Hello, %s!";
 	private final AtomicLong counter = new AtomicLong();
@@ -42,6 +42,14 @@ public class FreePointsController {
 	private final ListedCompanyService listedCompanyService;
 
 	
+	public FreePointsController(SymbolService symbolService, FeatureService featureService,
+			ListedCompanyService listedCompanyService) {
+		super();
+		this.symbolService = symbolService;
+		this.featureService = featureService;
+		this.listedCompanyService = listedCompanyService;
+	}
+
 	@GetMapping("/all-companies")
 	public List<ListedCompanyDto> getAllCompanies() {
 	        return listedCompanyService.getAllCompanies();

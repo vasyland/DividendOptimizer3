@@ -41,13 +41,13 @@ import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.TransactionRepository;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class TransactionService {
+	
+	 private static final Logger log = LoggerFactory.getLogger(TransactionService.class);
 
 	private final TransactionRepository transactionRepository;
 	private final PortfolioRepository portfolioRepository;
@@ -61,6 +61,27 @@ public class TransactionService {
 	
 	private final IncrementalPortfolioSummaryUpdater incrementalPortfolioSummaryUpdater;
 	
+	
+	
+	public TransactionService(TransactionRepository transactionRepository, PortfolioRepository portfolioRepository,
+			HoldingRepository holdingRepository, UserService userService, HoldingsService holdingsService,
+			CurrentPriceRepository currentPriceRepository,
+			IncrementalPortfolioSummaryService incrementalPortfolioSummaryService,
+			IncrementalHoldingsService incrementalHoldingsService,
+			IncrementalPortfolioSummaryUpdater incrementalPortfolioSummaryUpdater) {
+		super();
+		this.transactionRepository = transactionRepository;
+		this.portfolioRepository = portfolioRepository;
+		this.holdingRepository = holdingRepository;
+		this.userService = userService;
+		this.holdingsService = holdingsService;
+		this.currentPriceRepository = currentPriceRepository;
+		this.incrementalPortfolioSummaryService = incrementalPortfolioSummaryService;
+		this.incrementalHoldingsService = incrementalHoldingsService;
+		this.incrementalPortfolioSummaryUpdater = incrementalPortfolioSummaryUpdater;
+	}
+
+
 	/**
      * Save PortfolioTrade (both create and update)
      * @param p

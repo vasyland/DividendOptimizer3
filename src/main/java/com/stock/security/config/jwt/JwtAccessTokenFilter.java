@@ -25,8 +25,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author atquil
@@ -44,14 +44,20 @@ Let's create the Filter
 
  */
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class JwtAccessTokenFilter extends OncePerRequestFilter {
+	
+	private static final Logger log = LoggerFactory.getLogger(JwtAccessTokenFilter.class);
 
     private final RSAKeyRecord rsaKeyRecord;
     private final JwtTokenUtils jwtTokenUtils;
     
-    @Override
+    public JwtAccessTokenFilter(RSAKeyRecord rsaKeyRecord, JwtTokenUtils jwtTokenUtils) {
+		super();
+		this.rsaKeyRecord = rsaKeyRecord;
+		this.jwtTokenUtils = jwtTokenUtils;
+	}
+
+	@Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {

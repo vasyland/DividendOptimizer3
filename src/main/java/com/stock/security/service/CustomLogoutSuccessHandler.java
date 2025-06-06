@@ -11,11 +11,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
-@Slf4j
 public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
+	
+	private static final Logger log = LoggerFactory.getLogger(CustomLogoutSuccessHandler.class);
 
 	@Override
 	public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)

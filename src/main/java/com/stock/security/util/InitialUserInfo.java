@@ -9,14 +9,17 @@ import org.springframework.stereotype.Component;
 import com.stock.security.entity.UserInfo;
 import com.stock.security.repo.UserInfoRepository;
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
 @Component
 public class InitialUserInfo implements CommandLineRunner {
 	
 	private final UserInfoRepository userInfoRepo;
     private final PasswordEncoder passwordEncoder;
+    
+	public InitialUserInfo(UserInfoRepository userInfoRepo, PasswordEncoder passwordEncoder) {
+		super();
+		this.userInfoRepo = userInfoRepo;
+		this.passwordEncoder = passwordEncoder;
+	}
 
 	@Override
     public void run(String... args) throws Exception {

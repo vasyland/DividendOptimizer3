@@ -23,15 +23,19 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class JwtTokenGenerator {
 
 	private static final Logger log = LoggerFactory.getLogger(JwtTokenGenerator.class);
 
     private final JwtEncoder jwtEncoder;
 
-    /**
+    public JwtTokenGenerator(JwtEncoder jwtEncoder) {
+		super();
+		this.jwtEncoder = jwtEncoder;
+	}
+
+
+	/**
      * Generating Access Token
      * @param authentication
      * @return

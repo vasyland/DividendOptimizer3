@@ -33,13 +33,13 @@ import com.stock.security.util.CookieService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class AuthService {
+	
+	private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserInfoRepository userInfoRepo;
     private final JwtTokenGenerator jwtTokenGenerator;
@@ -51,9 +51,25 @@ public class AuthService {
     
     private final RSAKeyRecord rsaKeyRecord;
 	private final JwtTokenUtils jwtTokenUtils;
-    
-    
-	 /**
+
+	public AuthService(UserInfoRepository userInfoRepo, JwtTokenGenerator jwtTokenGenerator,
+			RefreshTokenRepo refreshTokenRepo, UserInfoMapper userInfoMapper, LogoutHandlerService logoutHandlerService,
+			CookieService cookieService, UserSubscriptionRepository userSubscriptionsRepository,
+			RSAKeyRecord rsaKeyRecord, JwtTokenUtils jwtTokenUtils) {
+		super();
+		this.userInfoRepo = userInfoRepo;
+		this.jwtTokenGenerator = jwtTokenGenerator;
+		this.refreshTokenRepo = refreshTokenRepo;
+		this.userInfoMapper = userInfoMapper;
+		this.logoutHandlerService = logoutHandlerService;
+		this.cookieService = cookieService;
+		this.userSubscriptionsRepository = userSubscriptionsRepository;
+		this.rsaKeyRecord = rsaKeyRecord;
+		this.jwtTokenUtils = jwtTokenUtils;
+	}
+
+
+	/**
 	  * Registering a New User
 	  * 1. a new user created, 
 	  * 2. an access and refresh tokens generated

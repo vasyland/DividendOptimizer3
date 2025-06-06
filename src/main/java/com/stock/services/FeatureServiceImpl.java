@@ -10,11 +10,14 @@ import com.stock.repositories.VolatilityDateRepository;
 import com.stock.security.service.AuthService;
 import com.stock.utils.DateUtil;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@Slf4j
 public class FeatureServiceImpl implements FeatureService {
+	
+	private static final Logger log = LoggerFactory.getLogger(FeatureServiceImpl.class);
+
 	
 	@Autowired
 	private VolatilityDateRepository volatilityDateRepository;
