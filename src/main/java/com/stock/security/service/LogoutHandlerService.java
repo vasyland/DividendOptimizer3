@@ -30,17 +30,13 @@ import jakarta.servlet.http.Cookie;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * @author atquil
- * 
- */
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class LogoutHandlerService implements LogoutHandler {
+	
+	private static final Logger log = LoggerFactory.getLogger(LogoutHandlerService.class);
 
 	private final RefreshTokenRepo refreshTokenRepo;
 	private final CookieService cookieService;
@@ -48,6 +44,17 @@ public class LogoutHandlerService implements LogoutHandler {
 
 	private final RSAKeyRecord rsaKeyRecord;
 	private final JwtTokenUtils jwtTokenUtils;
+	
+	public LogoutHandlerService(RefreshTokenRepo refreshTokenRepo, CookieService cookieService,
+			UserInfoRepository userInfoRepo, RSAKeyRecord rsaKeyRecord, JwtTokenUtils jwtTokenUtils) {
+		super();
+		this.refreshTokenRepo = refreshTokenRepo;
+		this.cookieService = cookieService;
+		this.userInfoRepo = userInfoRepo;
+		this.rsaKeyRecord = rsaKeyRecord;
+		this.jwtTokenUtils = jwtTokenUtils;
+	}
+
 
 	@Override
 	public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {

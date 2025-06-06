@@ -12,14 +12,11 @@ import org.springframework.stereotype.Service;
 import com.stock.security.entity.UserInfo;
 import com.stock.security.repo.UserInfoRepository;
 
-import lombok.RequiredArgsConstructor;
-
 /**
  * Getting a User information in the form of an Authentication object
  * from the database or from other sources
  */
 @Service
-@RequiredArgsConstructor
 public class UserInfoManagerConfig implements UserDetailsService {
 
 	private static final Logger log = LoggerFactory.getLogger(UserInfoManagerConfig.class);
@@ -27,6 +24,12 @@ public class UserInfoManagerConfig implements UserDetailsService {
     private final UserInfoRepository userInfoRepo;
     
       
+	public UserInfoManagerConfig(UserInfoRepository userInfoRepo) {
+		super();
+		this.userInfoRepo = userInfoRepo;
+	}
+
+
 	@Override
     public UserDetails loadUserByUsername(String emailId) throws UsernameNotFoundException {
 		

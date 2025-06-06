@@ -27,11 +27,13 @@ import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.TransactionRepository;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@Slf4j
 public class PortfolioSummaryService {
+	
+	private static final Logger log = LoggerFactory.getLogger(PortfolioSummaryService.class);
 
 	@Autowired
 	private PortfolioRepository portfolioRepository;

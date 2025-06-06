@@ -25,22 +25,31 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Thus filter is required during logout process using access token, but access token can be expired
  * We need to validate access token and regardless it is expired or not, and then to validate
  * 
  */
-@RequiredArgsConstructor
-@Slf4j
 public class JwtLogoutFilter extends OncePerRequestFilter {
+	
+	private static final Logger log = LoggerFactory.getLogger(JwtLogoutFilter.class);
 
 	private  final RSAKeyRecord rsaKeyRecord;
     private final JwtTokenUtils jwtTokenUtils;
     private final RefreshTokenRepo refreshTokenRepo;
     
+    
+	public JwtLogoutFilter(RSAKeyRecord rsaKeyRecord, JwtTokenUtils jwtTokenUtils, RefreshTokenRepo refreshTokenRepo) {
+		super();
+		this.rsaKeyRecord = rsaKeyRecord;
+		this.jwtTokenUtils = jwtTokenUtils;
+		this.refreshTokenRepo = refreshTokenRepo;
+	}
+
+
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, 
 			HttpServletResponse response, 

@@ -17,20 +17,36 @@ import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.PortfolioSummaryRepository;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class IncrementalPortfolioSummaryService {
+	
+	private static final Logger log = LoggerFactory.getLogger(IncrementalPortfolioSummaryService.class);
 
     private final PortfolioRepository portfolioRepository;
     private final HoldingRepository holdingRepository;
     private final CurrentPriceRepository currentPriceRepository;
     private final PortfolioSummaryRepository portfolioSummaryRepository;
+    
+    
+    
 
-    public PortfolioSummaryDTO calculatePortfolioSummary(Long portfolioId) {
+    public IncrementalPortfolioSummaryService(PortfolioRepository portfolioRepository,
+			HoldingRepository holdingRepository, CurrentPriceRepository currentPriceRepository,
+			PortfolioSummaryRepository portfolioSummaryRepository) {
+		super();
+		this.portfolioRepository = portfolioRepository;
+		this.holdingRepository = holdingRepository;
+		this.currentPriceRepository = currentPriceRepository;
+		this.portfolioSummaryRepository = portfolioSummaryRepository;
+	}
+
+
+
+
+	public PortfolioSummaryDTO calculatePortfolioSummary(Long portfolioId) {
     	
         Portfolio portfolio = portfolioRepository.findById(portfolioId)
                 .orElseThrow(() -> new RuntimeException("Portfolio not found"));

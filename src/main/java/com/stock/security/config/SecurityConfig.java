@@ -49,8 +49,8 @@ import com.stock.security.service.LogoutHandlerService;
 import com.stock.security.util.CookieService;
 
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -63,9 +63,9 @@ import lombok.extern.slf4j.Slf4j;
 @CrossOrigin(origins = "*")
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
-@Slf4j
 public class SecurityConfig {
+	
+	private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
 	private final UserInfoManagerConfig userInfoManagerConfig;
 	private final RSAKeyRecord rsaKeyRecord;
@@ -73,7 +73,19 @@ public class SecurityConfig {
 	private final CookieService cookieService;
 
 	private final JwtAccessTokenFilter jwtAccessTokenFilter;
-	
+
+	public SecurityConfig(UserInfoManagerConfig userInfoManagerConfig, RSAKeyRecord rsaKeyRecord,
+			JwtTokenUtils jwtTokenUtils, CookieService cookieService, JwtAccessTokenFilter jwtAccessTokenFilter,
+			CustomLogoutHandler customLogoutHandler) {
+		super();
+		this.userInfoManagerConfig = userInfoManagerConfig;
+		this.rsaKeyRecord = rsaKeyRecord;
+		this.jwtTokenUtils = jwtTokenUtils;
+		this.cookieService = cookieService;
+		this.jwtAccessTokenFilter = jwtAccessTokenFilter;
+		this.customLogoutHandler = customLogoutHandler;
+	}
+
 	@Autowired
     private final CustomLogoutHandler customLogoutHandler;
 	

@@ -15,18 +15,25 @@ import com.stock.model.TransactionType;
 import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.TransactionRepository;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class HoldingsService {
 
+	private static final Logger log = LoggerFactory.getLogger(HoldingsService.class);
+	
     private final TransactionRepository transactionRepository;
     private final HoldingRepository holdingRepository;
+    
+    public HoldingsService(TransactionRepository transactionRepository, HoldingRepository holdingRepository) {
+		super();
+		this.transactionRepository = transactionRepository;
+		this.holdingRepository = holdingRepository;
+	}
 
-    /**
+
+	/**
      * Recalculate and update the holding for a specific symbol in a portfolio
      */
     @Transactional
