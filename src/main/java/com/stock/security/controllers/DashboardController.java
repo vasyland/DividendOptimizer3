@@ -10,16 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
-
-//import lombok.RequiredArgsConstructor;
-
-/**
- * @author atquil
- */
 @RestController
 @RequestMapping("/api")
-@RequiredArgsConstructor
 public class DashboardController {
 
 //    @PreAuthorize("hasAnyRole('ROLE_MANAGER','ROLE_ADMIN','ROLE_USER')")

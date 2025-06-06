@@ -3,15 +3,18 @@ package com.stock.security.util;
 import java.util.Arrays;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.stock.services.PortfolioSummaryService;
+
 import jakarta.servlet.http.Cookie;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
-@Slf4j
 public class CookieService {
 
+	private static final Logger log = LoggerFactory.getLogger(CookieService.class);
 	
 	/**
 	 * Find a required cookie in the response

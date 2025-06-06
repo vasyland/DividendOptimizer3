@@ -3,11 +3,6 @@ package com.stock.data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-
 public class PortfolioSummaryDTO {
 	
 	private Long portfolioId;

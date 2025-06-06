@@ -13,15 +13,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "transactions")
-@Getter
-@Setter
-@NoArgsConstructor
 public class PortfolioHolding {
 
 	@Id
@@ -44,5 +38,60 @@ public class PortfolioHolding {
 
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal bookCost;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Portfolio getPortfolio() {
+		return portfolio;
+	}
+
+	public void setPortfolio(Portfolio portfolio) {
+		this.portfolio = portfolio;
+	}
+
+	public String getSymbol() {
+		return symbol;
+	}
+
+	public void setSymbol(String symbol) {
+		this.symbol = symbol;
+	}
+
+	public Integer getShares() {
+		return shares;
+	}
+
+	public void setShares(Integer shares) {
+		this.shares = shares;
+	}
+
+	public BigDecimal getAveragePrice() {
+		return averagePrice;
+	}
+
+	public void setAveragePrice(BigDecimal averagePrice) {
+		this.averagePrice = averagePrice;
+	}
+
+	public BigDecimal getBookCost() {
+		return bookCost;
+	}
+
+	public void setBookCost(BigDecimal bookCost) {
+		this.bookCost = bookCost;
+	}
+
+	@Override
+	public String toString() {
+		return "PortfolioHolding [id=" + id + ", portfolio=" + portfolio + ", symbol=" + symbol + ", shares=" + shares
+				+ ", averagePrice=" + averagePrice + ", bookCost=" + bookCost + "]";
+	}
     
+	
 }

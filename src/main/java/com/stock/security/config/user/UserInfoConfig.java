@@ -11,14 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.stock.security.entity.UserInfo;
 
-import lombok.RequiredArgsConstructor;
-
-//import lombok.RequiredArgsConstructor;
-
-/**
- * @author atquil
- * This is Authentication Object
- */
 public class UserInfoConfig implements UserDetails {
 
 	private static final long serialVersionUID = 1L;
