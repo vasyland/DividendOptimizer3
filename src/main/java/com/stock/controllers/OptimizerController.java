@@ -1,5 +1,6 @@
 package com.stock.controllers;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -43,15 +43,25 @@ public class OptimizerController {
   @CrossOrigin(origins = "http://localhost:5004")
   @GetMapping("/ca-buy-list")
   public List<SymbolStatusDto> getCaRecommendedBuySymbols() {  //@ResponseBody
-    return symbolService.getSymbolStatusList("TSX");
+	List<String> exchanges = Arrays.asList("TSX");
+    return symbolService.getSymbolStatusList(exchanges);
   }
   
   
   @CrossOrigin(origins = "http://localhost:5004")
   @GetMapping("/us-buy-list")
-  public List<SymbolStatus> getUsRecommendedBuySymbols() {  //@ResponseBody
-	return symbolService.getUsRecomendedBuySymbols();
+  public List<SymbolStatusDto> getUsRecommendedBuySymbols() {  //@ResponseBody
+	List<String> exchanges = Arrays.asList("NYSE","NASDAQ");
+	return symbolService.getSymbolStatusList(exchanges);
   }
+  
+  
+//orig  @CrossOrigin(origins = "http://localhost:5004")
+//  @GetMapping("/us-buy-list")
+//  public List<SymbolStatus> getUsRecommendedBuySymbols() {  //@ResponseBody
+//	return symbolService.getUsRecomendedBuySymbols();
+//  }
+  
   
 //  @CrossOrigin(origins = "http://localhost:5004")
 //  @GetMapping("/scenario/{userId}")

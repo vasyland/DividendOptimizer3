@@ -138,13 +138,13 @@ public class SymbolServiceImpl implements SymbolService {
 	 * 
 	 */
 	@Override
-	public List<SymbolStatusDto> getSymbolStatusList(String exchange) {
+	public List<SymbolStatusDto> getSymbolStatusList(List<String> exchanges) {
 
 		//Getting watch symbol list for TSX
-		Set<WatchSymbol> watchSymbols = watchSymbolRepository.findByExchange(exchange);
+		Set<WatchSymbol> watchSymbols = watchSymbolRepository.findByExchangeIn(exchanges);
 		
 		if (watchSymbols == null || watchSymbols.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No data found for exchange: " + exchange);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No data found for exchange: " + exchanges);
 		}
 		
 		Set<String> symbols = this.extractDistinctSymbols(watchSymbols);

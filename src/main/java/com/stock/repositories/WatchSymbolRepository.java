@@ -1,5 +1,6 @@
 package com.stock.repositories;
 
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,5 @@ import com.stock.model.WatchSymbol;
 
 @Repository
 public interface WatchSymbolRepository extends JpaRepository<WatchSymbol, String>{
-	
-	Set<WatchSymbol> findByExchange(String exchange);
+	Set<WatchSymbol> findByExchangeIn(List<String> exchanges);
 }

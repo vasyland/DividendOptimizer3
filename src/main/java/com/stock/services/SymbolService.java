@@ -19,8 +19,8 @@ public interface SymbolService {
 	List<MarketingStatusSymbol> getUsMarketingStatusSymbols();
 	
 	
-	//Using watch_symbol and surrent_price tables
-	List<SymbolStatusDto> getSymbolStatusList(String symbol);
+	//Using watch_symbol and current_price tables
+	List<SymbolStatusDto> getSymbolStatusList(List<String> exchanges);
 	
 	// Using status table
 	List<SymbolStatusDto> getCaSymbolStatusList();
