@@ -2,6 +2,8 @@ package com.stock.controllers;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.stock.data.HoldingPnLDto;
+import com.stock.data.HoldingDto;
 import com.stock.data.PortfolioSummaryDTO;
 import com.stock.model.Portfolio;
 import com.stock.model.PortfolioCreateRequest;
@@ -27,8 +29,6 @@ import com.stock.services.PortfolioService;
 import com.stock.services.PortfolioSummaryService;
 
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @CrossOrigin(origins = "https://localhost:5004")
 @RestController
@@ -93,6 +93,13 @@ public class PortfolioController {
 //        return new ResponseEntity<>(portfolios, HttpStatus.OK);
 //    }
     
+	/**
+	 * Get all Portfolios for the user This method returns PortfolioDto objects
+	 * instead of Portfolio entities to avoid exposing sensitive data.
+	 * 
+	 * @param userId
+	 * @return List of PortfolioDto
+	 */
     @CrossOrigin(origins = "https://localhost:5004")
     @GetMapping("/{userId}")
     public ResponseEntity<List<PortfolioDto>> getUserPortfolios(@PathVariable("userId") Long userId) {
@@ -153,6 +160,15 @@ public class PortfolioController {
 
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
+
+    @GetMapping("/{portfolioId}/holdings")
+	public ResponseEntity<?> getPortfolioHoldings(@PathVariable("portfolioId") Long portfolioId) {
+		log.info("[PortfolioController:recalculatePortfolioHoldings] Portfolio ID: {}", portfolioId);
+//		List<HoldingPnLDto> holdings = portfolioSummaryService.getPortfolioHoldingsData(portfolioId);
+		// Fetching portfolio holdings using the holdingsService adn updating records in db
+		List<HoldingDto> holdings = holdingsService.getPortfolioHoldings(portfolioId, true);
+		return ResponseEntity.ok(holdings);
+	}    
     
     /** Portfolio Summary: calculation of portfolio summary
      * Genarated by ChatGpt 
@@ -165,11 +181,6 @@ public class PortfolioController {
 	}
     
     
-    @GetMapping("/{portfolioId}/holdings")
-	public ResponseEntity<?> getPortfolioHoldings(@PathVariable("portfolioId") Long portfolioId) {
-		log.info("[PortfolioController:recalculatePortfolioHoldings] Portfolio ID: {}", portfolioId);
-		List<HoldingPnLDto> holdings = portfolioSummaryService.getPortfolioHoldingsData(portfolioId);
-		return ResponseEntity.ok(holdings);
-	}
+
     
 }

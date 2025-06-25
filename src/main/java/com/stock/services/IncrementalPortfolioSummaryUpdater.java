@@ -73,7 +73,7 @@ public class IncrementalPortfolioSummaryUpdater {
             portfolio.setCurrentCash(currentCash.add(totalProceeds));
             summary.setCash(summary.getCash().add(totalProceeds));
             
-            summary.setRealizedPnL(tx.getRealizedPnl() != null ? summary.getRealizedPnL().add(tx.getRealizedPnl()) : summary.getRealizedPnL());
+            summary.setRealizedPnL(tx.getRealizedPnL() != null ? summary.getRealizedPnL().add(tx.getRealizedPnL()) : summary.getRealizedPnL());
             log.info("[IncrementalPortfolioSummaryUpdater:applyTransaction] Realized PnL: {}", summary.getRealizedPnL());
             
             // Estimate realized PnL using average cost (optional: pass avg cost as parameter)

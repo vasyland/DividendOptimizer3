@@ -10,10 +10,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.stock.data.HoldingPnLDto;
+import com.stock.data.HoldingDto;
+import com.stock.data.HoldingDto;
 import com.stock.data.PortfolioSummaryDTO;
 import com.stock.data.PortfolioUnrealizedPnLDto;
 import com.stock.model.CurrentPrice;
@@ -26,9 +29,6 @@ import com.stock.repositories.CurrentPriceRepository;
 import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.TransactionRepository;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class PortfolioSummaryService {
@@ -135,6 +135,89 @@ public class PortfolioSummaryService {
 		portfolioRepository.save(portfolio);
 	}
 
+	
+	/**
+	 * This method retrieves the portfolio data for a given user ID. It calculates
+	 * the unrealized and realized PnL for each holding, and summarizes the total
+	 * PnL by portfolio.
+	 *
+	 * @param userId The ID of the user whose portfolio data is to be retrieved.
+	 * @return A list of PortfolioDto objects containing the portfolio data.
+	 */
+	public List<PortfolioDto> getUserPortfoliosData(long userId) {
+		
+		// Get all portfolios for the user
+		List<Portfolio> portfolioList = portfolioRepository.findByUserId(userId);
+		
+		if (portfolioList.isEmpty()) {
+			log.warn("[PortfolioSummaryService:getUserPortfoliosData] No portfolios found for user ID: {}", userId);
+			return List.of(); // Return an empty list if no portfolios found
+		}
+		
+		//Loop through each portfolio and calculate its summary
+		List<PortfolioDto> portfolioDtoList = new ArrayList<>();
+		
+		for (Portfolio p: portfolioList) {
+			
+			BigDecimal portfolioBookCost = BigDecimal.ZERO;
+			BigDecimal realizedPnL = BigDecimal.ZERO;
+			BigDecimal unrealizedPnL = BigDecimal.ZERO;
+			BigDecimal marketValue = BigDecimal.ZERO;
+			int numberOfholdings = 0;
+			
+			var portfolioHoldings = getPortfolioHoldingsData(p.getId());
+			for (HoldingDto h: portfolioHoldings) {
+				portfolioBookCost.add(h.getBookCost() != null ? h.getBookCost() : BigDecimal.ZERO);
+				realizedPnL = realizedPnL.add(h.getRealizedPnL() != null ? h.getRealizedPnL() : BigDecimal.ZERO);
+				unrealizedPnL = unrealizedPnL.add(h.getUnrealizedPnL() != null ? h.getUnrealizedPnL() : BigDecimal.ZERO);
+				marketValue = marketValue.add(h.getMarketValue() != null ? h.getMarketValue() : BigDecimal.ZERO);
+				numberOfholdings++;
+			}
+			
+			// Calculate total portfolio state = current cash + current cost + PnL
+			BigDecimal initialCash = p.getInitialCash() != null ? p.getInitialCash() : BigDecimal.ZERO;
+			BigDecimal currentCash = p.getCurrentCash() != null ? p.getCurrentCash() : BigDecimal.ZERO;
+			
+			BigDecimal totalValue = initialCash.add(currentCash).add(unrealizedPnL).add(marketValue).add(realizedPnL);
+			BigDecimal pnl = totalValue.subtract(initialCash);
+			
+			BigDecimal pnlPercent = BigDecimal.ZERO;
+			if (initialCash.compareTo(BigDecimal.ZERO) > 0) {
+			    pnlPercent = pnl.divide(initialCash, 4, RoundingMode.HALF_UP)
+			                    .multiply(BigDecimal.valueOf(100))
+			                    .setScale(2, RoundingMode.HALF_UP);
+			}
+			
+			var portfolioDto = new PortfolioDto();
+			portfolioDto.setId(p.getId());
+			portfolioDto.setUserId(p.getUser().getId());
+			portfolioDto.setName(p.getName());
+			portfolioDto.setInitialCash(initialCash);
+			portfolioDto.setCurrentCash(currentCash);
+			portfolioDto.setCurrentCost(marketValue);
+			portfolioDto.setRealizedPnL(realizedPnL);
+			portfolioDto.setUnrealizedPnL(unrealizedPnL);
+			portfolioDto.setTotalValue(totalValue);
+			portfolioDto.setPnl(pnl.setScale(2, RoundingMode.HALF_UP));
+			portfolioDto.setPnlPercent(pnlPercent);
+			portfolioDto.setNumberOfholdings(numberOfholdings);
+			portfolioDto.setCreatedAt(p.getCreatedAt());
+			portfolioDto.setUpdatedAt(p.getUpdatedAt());
+			portfolioDtoList.add(portfolioDto);
+			log.info("[PortfolioSummaryService:getUserPortfoliosData] Portfolio ID: {}, Name: {}, Initial Cash: {}, "
+					+ "Current Cash: {}, Current Cost: {}, Realized PnL: {}, Unrealized PnL: {}, Total Value: {}, "
+					+ "Number of Holdings: {}, PnL: {}, PnL Percent: {}", portfolioDto.getId(), portfolioDto.getName(),
+					portfolioDto.getInitialCash(), portfolioDto.getCurrentCash(), portfolioDto.getCurrentCost(),
+					portfolioDto.getRealizedPnL(), portfolioDto.getUnrealizedPnL(), portfolioDto.getTotalValue(),
+					portfolioDto.getNumberOfholdings(), portfolioDto.getPnl(), portfolioDto.getPnlPercent());
+			  
+		}
+		
+		return portfolioDtoList;
+	}
+	
+	
+	
 	/**
 	 * This method retrieves the portfolio data for a given user ID.
 	 * It calculates the unrealized and realized PnL for each holding,
@@ -143,16 +226,19 @@ public class PortfolioSummaryService {
 	 * @param userId The ID of the user whose portfolio data is to be retrieved.
 	 * @return A list of PortfolioDto objects containing the portfolio data.
 	 */
-	public List<PortfolioDto> getUserPortfoliosData(long userId) {
+	public List<PortfolioDto> getUserPortfoliosDataORIG(long userId) {
 
 		// Get a list of all user holdings
 		List<Holding> holdings = holdingRepository.findByUserId(userId);
+		
 		// Get distinct symbols from the list of holdings
 		Set<String> symbols = this.extractDistinctSymbols(holdings);
+		
 		// Get current prices for the symbols
 		List<CurrentPrice> priceList = currentPriceRepository.findBySymbolIn(symbols);
 
-		List<HoldingPnLDto> holdingPnLList = new ArrayList<>();
+		var holdingPnLList = new ArrayList<HoldingDto>();
+		
 		// Calculate Holding PnL
 		for (Holding h : holdings) {
 
@@ -162,7 +248,7 @@ public class PortfolioSummaryService {
 					.orElse(null);
 
 			if (price != null) {
-				HoldingPnLDto holdingPnL = new HoldingPnLDto();
+				var holdingPnL = new HoldingDto();
 
 				holdingPnL.setId(h.getId());
 				holdingPnL.setPortfolioId(h.getPortfolio().getId());
@@ -173,14 +259,16 @@ public class PortfolioSummaryService {
 				BigDecimal currentCost = h.getAvgCostPerShare().multiply(new BigDecimal(h.getShares()));
 
 				holdingPnL.setUnrealizedPnL(unrealizedPnL);
-				holdingPnL.setCurrentCost(currentCost);
+				holdingPnL.setMarketValue(currentCost);
 				holdingPnL.setRealizedPnL(h.getRealizedPnL());
 				holdingPnLList.add(holdingPnL);
 			}
 		}
 
-		// Calculate total PnL by Portfolio
+		// Calculate PnL by Portfolio
 		List<PortfolioUnrealizedPnLDto> summary = this.calculateUnrealizedPnLByPortfolio(holdingPnLList);
+		log.info("[PortfolioSummaryService:getUserPortfoliosData] Summary of Unrealized PnL by Portfolio: {}", summary);
+		
 		// Log the summary
 		for (PortfolioUnrealizedPnLDto s : summary) {
 			System.out.println("[PortfolioSummaryService:getUserPortfoliosData] Portfolio ID: " + s.getId()
@@ -247,9 +335,19 @@ public class PortfolioSummaryService {
             pDto.setPnlPercent(pnlPercent);
 			portfolioDtoList.add(pDto);
 		}
+		// Log the portfolio DTOs
+		for (PortfolioDto pdto : portfolioDtoList) {
+			log.info("[PortfolioSummaryService:getUserPortfoliosData] Portfolio ID: {}, Name: {}, Initial Cash: {}, "
+					+ "Current Cash: {}, Current Cost: {}, Realized PnL: {}, Unrealized PnL: {}, Total Value: {}, "
+					+ "Number of Holdings: {}, PnL: {}, PnL Percent: {}", pdto.getId(), pdto.getName(),
+					pdto.getInitialCash(), pdto.getCurrentCash(), pdto.getCurrentCost(), pdto.getRealizedPnL(),
+					pdto.getUnrealizedPnL(), pdto.getTotalValue(), pdto.getNumberOfholdings(), pdto.getPnl(),
+					pdto.getPnlPercent());
+		}
 		return portfolioDtoList;
 	}
 
+	
 	public PortfolioDto getPortfolioData(long portfolioId) {
 		// Get a list of all user holdings
 		List<Holding> holdings = holdingRepository.findByPortfolioId(portfolioId);
@@ -259,7 +357,7 @@ public class PortfolioSummaryService {
 		List<CurrentPrice> priceList = currentPriceRepository.findBySymbolIn(symbols);
 
 		// Calculate Holding PnL
-		List<HoldingPnLDto> holdingPnLList = new ArrayList<>();
+		var holdingPnLList = new ArrayList<HoldingDto>();
 		for (Holding h : holdings) {
 
 			CurrentPrice price = priceList.stream()
@@ -268,7 +366,7 @@ public class PortfolioSummaryService {
 					.orElse(null);
 
 			if (price != null) {
-				HoldingPnLDto holdingPnL = new HoldingPnLDto();
+				var holdingPnL = new HoldingDto();
 
 				holdingPnL.setId(h.getId());
 				holdingPnL.setPortfolioId(h.getPortfolio().getId());
@@ -279,7 +377,7 @@ public class PortfolioSummaryService {
 				BigDecimal currentCost = h.getAvgCostPerShare().multiply(new BigDecimal(h.getShares()));
 
 				holdingPnL.setUnrealizedPnL(unrealizedPnL);
-				holdingPnL.setCurrentCost(currentCost);
+				holdingPnL.setMarketValue(currentCost);
 				holdingPnL.setRealizedPnL(h.getRealizedPnL());
 				holdingPnLList.add(holdingPnL);
 			}
@@ -329,17 +427,20 @@ public class PortfolioSummaryService {
 	 *                    retrieved.
 	 * @return A list of HoldingPnLDto objects containing the holdings data.
 	 */
-	public List<HoldingPnLDto> getPortfolioHoldingsData(long portfolioId) {
+	public List<HoldingDto> getPortfolioHoldingsData(long portfolioId) {
 
 		// Get a list of all user holdings
 		List<Holding> holdings = holdingRepository.findByPortfolioId(portfolioId);
+		
 		// Get distinct symbols from the list of holdings
 		Set<String> symbols = this.extractDistinctSymbols(holdings);
+		
 		// Get current prices for the symbols
 		List<CurrentPrice> priceList = currentPriceRepository.findBySymbolIn(symbols);
 
 		// Calculate Holding PnL
-		List<HoldingPnLDto> holdingPnLList = new ArrayList<>();
+		var holdingPnLList = new ArrayList<HoldingDto>();
+		
 		for (Holding h : holdings) {
 			CurrentPrice price = priceList.stream()
 					.filter(t -> t.getSymbol().equals(h.getSymbol()))
@@ -347,7 +448,7 @@ public class PortfolioSummaryService {
 					.orElse(null);
 
 			if (price != null) {
-				HoldingPnLDto holdingPnL = new HoldingPnLDto();
+				var holdingPnL = new HoldingDto();
 
 				holdingPnL.setId(h.getId());
 				holdingPnL.setPortfolioId(h.getPortfolio().getId());
@@ -362,7 +463,7 @@ public class PortfolioSummaryService {
 				BigDecimal currentCost = h.getAvgCostPerShare().multiply(new BigDecimal(h.getShares()));
 
 				holdingPnL.setUnrealizedPnL(unrealizedPnL);
-				holdingPnL.setCurrentCost(currentCost);
+				holdingPnL.setMarketValue(currentCost);
 				holdingPnL.setRealizedPnL(h.getRealizedPnL());
 				holdingPnLList.add(holdingPnL);
 			}
@@ -390,20 +491,21 @@ public class PortfolioSummaryService {
 	 * @param holdingPnLs - list of portfolio holdings
 	 * @return
 	 */
-	public static List<PortfolioUnrealizedPnLDto> calculateUnrealizedPnLByPortfolio(List<HoldingPnLDto> holdingPnLs) {
+	public static List<PortfolioUnrealizedPnLDto> calculateUnrealizedPnLByPortfolio(List<HoldingDto> holdingPnLs) {
+		
 		Map<Long, BigDecimal> portfolioUnrealizedPnLMap = new HashMap<>();
 		Map<Long, BigDecimal> portfolioRealizedPnLMap = new HashMap<>();
 		Map<Long, BigDecimal> portfolioCurrentCostMap = new HashMap<>();
 		Map<Long, Integer> portfolioHoldingsCountMap = new HashMap<>();
 		// Map<Integer, BigDecimal> portfolioMarketValueMap = new HashMap<>();
 
-		for (HoldingPnLDto holding : holdingPnLs) {
+		for (HoldingDto holding : holdingPnLs) {
 			long portfolioId = holding.getPortfolioId();
 
 			BigDecimal unrealizedPnL = holding.getUnrealizedPnL() != null ? holding.getUnrealizedPnL()
 					: BigDecimal.ZERO;
 			BigDecimal realizedPnL = holding.getRealizedPnL() != null ? holding.getRealizedPnL() : BigDecimal.ZERO;
-			BigDecimal currentCost = holding.getCurrentCost() != null ? holding.getCurrentCost() : BigDecimal.ZERO;
+			BigDecimal currentCost = holding.getMarketValue() != null ? holding.getMarketValue() : BigDecimal.ZERO;
 
 			portfolioUnrealizedPnLMap.merge(portfolioId, unrealizedPnL, BigDecimal::add);
 			portfolioRealizedPnLMap.merge(portfolioId, realizedPnL, BigDecimal::add);
@@ -432,7 +534,7 @@ public class PortfolioSummaryService {
 	 * @param holdingPnLList - list of portfolio holdings
 	 * @return
 	 */
-	public PortfolioUnrealizedPnLDto calculatePortfolioPnL(List<HoldingPnLDto> holdingPnLList) {
+	public PortfolioUnrealizedPnLDto calculatePortfolioPnL(List<HoldingDto> holdingList) {
 
 		Map<Long, BigDecimal> portfolioUnrealizedPnLMap = new HashMap<>();
 		Map<Long, BigDecimal> portfolioRealizedPnLMap = new HashMap<>();
@@ -442,13 +544,13 @@ public class PortfolioSummaryService {
 
 		long portfolioId = 0;
 
-		for (HoldingPnLDto holding : holdingPnLList) {
+		for (HoldingDto holding : holdingList) {
 			portfolioId = holding.getPortfolioId();
 
 			BigDecimal unrealizedPnL = holding.getUnrealizedPnL() != null ? holding.getUnrealizedPnL()
 					: BigDecimal.ZERO;
 			BigDecimal realizedPnL = holding.getRealizedPnL() != null ? holding.getRealizedPnL() : BigDecimal.ZERO;
-			BigDecimal currentCost = holding.getCurrentCost() != null ? holding.getCurrentCost() : BigDecimal.ZERO;
+			BigDecimal currentCost = holding.getMarketValue() != null ? holding.getMarketValue() : BigDecimal.ZERO;
 
 			portfolioUnrealizedPnLMap.merge(portfolioId, unrealizedPnL, BigDecimal::add);
 			portfolioRealizedPnLMap.merge(portfolioId, realizedPnL, BigDecimal::add);

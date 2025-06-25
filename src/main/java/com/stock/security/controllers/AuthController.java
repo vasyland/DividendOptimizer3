@@ -27,9 +27,6 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author atquil
- */
 @RestController
 @CrossOrigin
 public class AuthController {
@@ -46,7 +43,7 @@ public class AuthController {
 		this.logoutHandlerService = logoutHandlerService;
 	}
 
-
+    // login
 	@PostMapping("/sign-in")
     public ResponseEntity<?> authenticateUser(Authentication authentication, HttpServletResponse response){
     	log.info("#1 /sigh-in authentication.getName() = " + authentication.getName());

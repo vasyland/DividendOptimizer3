@@ -12,7 +12,7 @@ public class TransactionDto {
 	private BigDecimal price;
 	private BigDecimal commissions;
 	private BigDecimal bookCost;
-	private BigDecimal Pnl;
+	private BigDecimal unrealizedPnL;
 	private BigDecimal PnlPercentage;
 	private String currency;
 	private String transactionType;
@@ -37,7 +37,7 @@ public class TransactionDto {
 		this.price = price;
 		this.commissions = commissions;
 		this.bookCost = bookCost;
-		Pnl = pnl;
+		unrealizedPnL = pnl;
 		PnlPercentage = pnlPercentage;
 		this.currency = currency;
 		this.transactionType = transactionType;
@@ -104,11 +104,11 @@ public class TransactionDto {
 	}
 
 	public BigDecimal getPnl() {
-		return Pnl;
+		return unrealizedPnL;
 	}
 
 	public void setPnl(BigDecimal pnl) {
-		Pnl = pnl;
+		unrealizedPnL = pnl;
 	}
 
 	public BigDecimal getPnlPercentage() {
@@ -170,7 +170,7 @@ public class TransactionDto {
 	@Override
 	public String toString() {
 		return "TransactionDto [id=" + id + ", portfolio=" + portfolio + ", symbol=" + symbol + ", shares=" + shares
-				+ ", price=" + price + ", commissions=" + commissions + ", bookCost=" + bookCost + ", Pnl=" + Pnl
+				+ ", price=" + price + ", commissions=" + commissions + ", bookCost=" + bookCost + ", Pnl=" + unrealizedPnL
 				+ ", PnlPercentage=" + PnlPercentage + ", currency=" + currency + ", transactionType=" + transactionType
 				+ ", transactionDate=" + transactionDate + ", note=" + note + ", createdAt=" + createdAt
 				+ ", updatedAt=" + updatedAt + "]";

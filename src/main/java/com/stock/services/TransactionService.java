@@ -81,6 +81,12 @@ public class TransactionService {
 		this.incrementalPortfolioSummaryUpdater = incrementalPortfolioSummaryUpdater;
 	}
 
+	/**
+	 * 1. Buy transaction goes strait forward into db
+	 * 2. Sell transaction needs some calculation on average price of current hoding of the symbol in order tocalculate realized PnL.
+	 *   a. We need to take all existing Buy and Sell transactions for this symbol 
+	 *   b. to find out what is the average price 
+	 */
 
 	/**
      * Save PortfolioTrade (both create and update)
@@ -129,6 +135,14 @@ public class TransactionService {
     	
     	if (tx.getTransactionType() == TransactionType.SELL) {
     		
+    		//Get average price from existing transactions for this symbol
+    		BigDecimal avgPrice = holdingsService.getPorfolioSymbolAveragePrice(tx.getPortfolioId(), tx.getSymbol());
+    		
+			log.info("[HoldingsService:getPortfolioHoldings] Average Price for {}: {}", tx.getSymbol(), avgPrice);
+			if (avgPrice == null) {
+				throw new HoldingNotFoundException("No holding found for symbol: " + tx.getSymbol() + " to create a SELL transaction.");
+			}
+    		
     		if (holdingOpt.isEmpty()) {
     		    throw new HoldingNotFoundException("No holding found for symbol: " + tx.getSymbol() + " to create a SELL transaction.");
     		}
@@ -146,10 +160,23 @@ public class TransactionService {
 
     	    BigDecimal commissions = tx.getCommissions() != null ? tx.getCommissions() : BigDecimal.ZERO;
 
-    	    BigDecimal pnl = txValue.subtract(costBasis).subtract(commissions).setScale(2, RoundingMode.HALF_UP);
-    	    log.info("[TransactionService:createTransaction] PnL: {}", pnl);
+    	    // Disposition amount of the transaction  
+//    	    BigDecimal dispositionAmt = txValue.subtract(costBasis).subtract(commissions).setScale(2, RoundingMode.HALF_UP);
+//    	    log.info("[TransactionService:createTransaction] PnL: {}", dispositionAmt);
 
-    	    transaction.setRealizedPnl(pnl);
+    	    // (tx.price * tx.shares) - (avgPrice * tx.shares) - commissions
+    	    // (tx.price - avgPrice) * tx.shares - commissions
+			log.info("[TransactionService:createTransaction] #10 tx.getPrice(): {}, #20 avgPrice: {}, #30 tx.getShares(): {}, #40 commissions: {}",
+					tx.getPrice(), avgPrice, tx.getShares(), commissions);
+			
+    	    BigDecimal realizedPnL = tx.getPrice().subtract(avgPrice).multiply(BigDecimal.valueOf(tx.getShares())).subtract(commissions).setScale(2, RoundingMode.HALF_UP);
+			
+			log.info("[TransactionService:createTransaction] #4 tx.getPrice(): {}, Realized PnL: {}, #5 avgPrice: {}, Shares: {}", 
+					tx.getPrice(), realizedPnL, avgPrice, tx.getShares());
+			
+			transaction.setRealizedPnL(realizedPnL);
+    	    
+    	    //transaction.setRealizedPnl(pnl);
     	}
 
 
@@ -157,7 +184,6 @@ public class TransactionService {
     	log.info("[TransactionService:createTransaction] Transaction saved: {}", savedTransaction);
     	
     	// Recalculate holdings for the portfolio using all transactions 
-        //holdingsService.recalculateHoldingsForPortfolio(transaction.getPortfolio().getId());
     	incrementalHoldingsService.applyNewTransaction(savedTransaction);
     	
         // Update portfolio cash after summary calculation
@@ -340,6 +366,7 @@ public class TransactionService {
 	
 	
 	public List<TransactionDto> getTransactionDtos(Long portfolioId) {
+		
 		List<Transaction> transactions = transactionRepository.findByPortfolioId(portfolioId);
 		if (transactions == null || transactions.isEmpty()) {
 			return List.of();
@@ -385,10 +412,10 @@ public class TransactionService {
 				tDto.setNote(t.getNote());
 				tDto.setCreatedAt(t.getCreatedAt());
 				tDto.setUpdatedAt(t.getUpdatedAt());
-				tDto.setPnl(t.getRealizedPnl() != null ? t.getRealizedPnl() : BigDecimal.ZERO);
+				tDto.setPnl(t.getRealizedPnL() != null ? t.getRealizedPnL() : BigDecimal.ZERO);
 				
-				if (t.getTransactionType() == TransactionType.SELL && t.getRealizedPnl() != null) {
-					tDto.setPnl(t.getRealizedPnl());
+				if (t.getTransactionType() == TransactionType.SELL && t.getRealizedPnL() != null) {
+					tDto.setPnl(t.getRealizedPnL());
 				} else {
 					BigDecimal unrealizedPnl = t.getShares() != null && price.getPrice() != null
 							? price.getPrice().multiply(BigDecimal.valueOf(t.getShares())).subtract(bookCost)
@@ -396,9 +423,8 @@ public class TransactionService {
 					tDto.setPnl(unrealizedPnl);
 				}
 				
-				
-				tDto.setPnlPercentage(t.getRealizedPnl() != null && bookCost.compareTo(BigDecimal.ZERO) > 0
-						? t.getRealizedPnl().divide(bookCost, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
+				tDto.setPnlPercentage(t.getRealizedPnL() != null && bookCost.compareTo(BigDecimal.ZERO) > 0
+						? t.getRealizedPnL().divide(bookCost, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
 						: BigDecimal.ZERO);
 				
 				transactionDtos.add(tDto);

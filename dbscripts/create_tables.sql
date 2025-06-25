@@ -71,6 +71,17 @@ CREATE TABLE `user_subscription_seq` (
 INSERT INTO user_subscription_seq (next_val) VALUES (1);
 commit;
 
+-- Watch Symbols
+CREATE TABLE `watch_symbol` (
+  `symbol` varchar(10) NOT NULL COMMENT 'Stock symbol TSX with .TO',
+  `quoterly_dividend_amount` decimal(10,4) DEFAULT NULL COMMENT 'Majority ov comapnies pay on quaterly basis',
+  `upper_yield` decimal(6,4) DEFAULT NULL COMMENT 'Upper yeild where price is at lowest point',
+  `lower_yield` decimal(6,4) DEFAULT NULL COMMENT 'Lowe yield when price is at highest point',
+  `updated_on` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Date when record was created or updated',
+  `exchange` varchar(10) DEFAULT NULL COMMENT 'Stock symbol exchange ',
+  PRIMARY KEY (`symbol`)
+)
+
 
 
 
@@ -134,14 +145,7 @@ CREATE TABLE `marketing_symbol_status` (
 
 
 ======================== NYSE ==========================================
-CREATE TABLE `us_watch_symbol` (
-  `symbol` varchar(10) NOT NULL COMMENT 'Stock symbol TSX with .TO',
-  `quoterly_dividend_amount` decimal(10,4) DEFAULT NULL COMMENT 'Majority ov comapnies pay on quaterly basis',
-  `upper_yield` decimal(6,4) DEFAULT NULL COMMENT 'Upper yeild where price is at lowest point',
-  `lower_yield` decimal(6,4) DEFAULT NULL COMMENT 'Lowe yield when price is at highest point',
-  `updated_on` datetime(6) DEFAULT NULL COMMENT 'Date when record was created or updated',
-  PRIMARY KEY (`symbol`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 
 ====== Volatility Dates ================================================
 use golem;
@@ -288,12 +292,14 @@ CREATE TABLE fmp_data (
 
 use golem;
 drop table listed_companies;
-CREATE TABLE listed_companies (
-    symbol VARCHAR(11) PRIMARY KEY,  -- symbol becomes the primary key
-    name VARCHAR(100),
-    marketcap BIGINT,
-    exchange VARCHAR(6),
-    INDEX idx_listed_name (name) -- Optional: index name if you often search by it
+CREATE TABLE `listed_companies` (
+  `symbol` varchar(10) NOT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `marketCap` bigint DEFAULT NULL,
+  `exchange` varchar(6) DEFAULT NULL,
+  PRIMARY KEY (`symbol`),
+  UNIQUE KEY `symbol` (`symbol`),
+  KEY `idx_listed_name` (`name`)
 );
 
 

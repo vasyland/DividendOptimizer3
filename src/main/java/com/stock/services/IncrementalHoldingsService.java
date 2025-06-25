@@ -56,9 +56,12 @@ public class IncrementalHoldingsService {
     }
 
     private void adjustHolding(Transaction tx, boolean apply) {
+    	
         String symbol = tx.getSymbol();
         Long portfolioId = tx.getPortfolio().getId();
         int txShares = tx.getShares();
+        BigDecimal realizedPnL = tx.getRealizedPnL() != null ? tx.getRealizedPnL() : BigDecimal.ZERO;
+        
         BigDecimal price = tx.getPrice();
         BigDecimal commissions = tx.getCommissions() != null ? tx.getCommissions() : BigDecimal.ZERO;
         BigDecimal tradeCost = price.multiply(BigDecimal.valueOf(txShares)).add(commissions);
@@ -68,7 +71,9 @@ public class IncrementalHoldingsService {
         int sign = apply ? 1 : -1;
 
         if (tx.getTransactionType() == TransactionType.BUY) {
+        	
             if (existingOpt.isPresent()) {
+            	
                 Holding h = existingOpt.get();
                 int totalShares = h.getShares() + sign * txShares;
                 BigDecimal newBookCost = h.getBookCost().add(tradeCost.multiply(BigDecimal.valueOf(sign)));
@@ -84,6 +89,7 @@ public class IncrementalHoldingsService {
                     h.setAvgCostPerShare(avgCost);
                     holdingRepository.save(h);
                 }
+                
             } else if (apply) {
                 // Only create on apply, not on reverse
                 Holding h = new Holding();
@@ -93,6 +99,7 @@ public class IncrementalHoldingsService {
                 h.setBookCost(tradeCost.setScale(2, RoundingMode.HALF_UP));
                 h.setAvgCostPerShare(price.setScale(2, RoundingMode.HALF_UP));
                 h.setCurrency(tx.getCurrency());
+                
                 holdingRepository.save(h);
             }
             
@@ -112,7 +119,8 @@ public class IncrementalHoldingsService {
                 	
                     BigDecimal costReduction = h.getAvgCostPerShare().multiply(BigDecimal.valueOf(txShares)).multiply(BigDecimal.valueOf(sign));
                     BigDecimal newBookCost = h.getBookCost().add(costReduction); // reverse = +cost, apply = -cost
-                    BigDecimal realizedPnL =  h.getRealizedPnL() != null ? h.getRealizedPnL().add(tx.getRealizedPnl()) : tx.getRealizedPnl();
+                    
+//                    BigDecimal realizedPnl =  h.getRealizedPnL() != null ? h.getRealizedPnL().add(tx.getRealizedPnl()) : tx.getRealizedPnl();
                     
 					log.info(
 							"[IncrementalHoldingsService:adjustHolding] Adjusting holding for symbol: {}, portfolioId: {}, shares: {}, newBookCost: {}, realizedPnL: {}",

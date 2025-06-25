@@ -44,7 +44,7 @@ public class Transaction {
 	private BigDecimal commissions;
 	
 	@Column(name = "realized_pnl")
-	private BigDecimal realizedPnl;
+	private BigDecimal realizedPnL;
 
 	@Column(name = "currency")
 	private String currency;
@@ -129,12 +129,12 @@ public class Transaction {
 		this.commissions = commissions;
 	}
 
-	public BigDecimal getRealizedPnl() {
-		return realizedPnl;
+	public BigDecimal getRealizedPnL() {
+		return realizedPnL;
 	}
 
-	public void setRealizedPnl(BigDecimal realizedPnl) {
-		this.realizedPnl = realizedPnl;
+	public void setRealizedPnL(BigDecimal realizedPnL) {
+		this.realizedPnL = realizedPnL;
 	}
 
 	public String getCurrency() {
@@ -188,10 +188,12 @@ public class Transaction {
 	@Override
 	public String toString() {
 		return "Transaction [id=" + id + ", portfolio=" + portfolio + ", symbol=" + symbol + ", shares=" + shares
-				+ ", price=" + price + ", commissions=" + commissions + ", realizedPnl=" + realizedPnl + ", currency="
+				+ ", price=" + price + ", commissions=" + commissions + ", realizedPnL=" + realizedPnL + ", currency="
 				+ currency + ", transactionType=" + transactionType + ", transactionDate=" + transactionDate + ", note="
 				+ note + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
 	}
+
+	
 	
 	
 }

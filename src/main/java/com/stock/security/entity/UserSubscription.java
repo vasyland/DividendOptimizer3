@@ -88,14 +88,12 @@ public class UserSubscription implements Serializable {
 		this.updatedOn = updatedOn;
 	}
 
-	public static long getSerialversionuid() {
-		return serialVersionUID;
-	}
-
 	@Override
 	public String toString() {
 		return "UserSubscription [id=" + id + ", user=" + user + ", subscriptionExpiry=" + subscriptionExpiry
 				+ ", createdOn=" + createdOn + ", updatedOn=" + updatedOn + "]";
 	}
+
+	
 
 }
