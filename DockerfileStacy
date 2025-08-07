@@ -1,0 +1,36 @@
+FROM openjdk:21-jdk
+WORKDIR /usr/local/app
+
+COPY src ./src
+COPY dbscripts ./dbscripts
+COPY gradle ./gradle
+COPY gradlew ./gradlew
+COPY build.gradle ./build.gradle
+COPY settings.gradle ./settings.gradle
+COPY gradlew.bat ./gradlew.bat
+
+RUN microdnf install findutils
+
+RUN chmod +x ./gradlew
+
+RUN useradd app
+
+RUN chown app: /usr/local/app
+
+USER app
+RUN chmod +wx /usr/local/app
+RUN ./gradlew build
+
+
+EXPOSE 8081
+CMD ["java", "-jar", "build/libs/DividendOptimizer3-0.0.3-SNAPSHOT.jar"]
+# sudo docker run -d -p 8080:8080 -p 8081:8081 -td sha256:8087b913dc977b3e22d1519ebb0406f42e708eb365274bff192f4fcd3fd7c1a2
+
+
+# docker run sha256:8087b913dc977b3e22d1519ebb0406f42e708eb365274bff192f4fcd3fd7c1a2
+
+# docker export sha256:8087b913dc977b3e22d1519ebb0406f42e708eb365274bff192f4fcd3fd7c1a2 > dividendoptimizer3.tar
+
+# docker save -o dividendoptimizer3.tar sha256:8087b913dc977b3e22d1519ebb0406f42e708eb365274bff192f4fcd3fd7c1a2
+
+# scp -i ~/.ssh/stockwatcher dividendoptimizer3.tar vasyl@143.198.46.81:/home/vasyl

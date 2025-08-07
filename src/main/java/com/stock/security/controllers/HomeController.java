@@ -9,11 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/home")
 public class HomeController {
-
-	@GetMapping("/canada")
-	public String home() {
-		return "HOME: Where is my home? ";
-	}
 	
 	@GetMapping("/process")
 	public String process() {

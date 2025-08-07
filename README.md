@@ -6,6 +6,25 @@ SpringBoot, REST, Spring Security, JWT
 July 10, 2024: branch J10-Security - fixed issues with secrurity configurations
 
 
+## Docker setup
+
+1. Build jar file using Gradle Tasks: bootJar
+2. Navigate to the folder where Dockerfile is
+	cd C:\Users\vasyl\git\DividendOptimizer3
+3. Build Docker image
+	docker build -t optimizer .
+4. Run docker image
+    docker run --name opt1 -p 8081:8081 optimizer 
+    
+    docker exec -it opt1 /bin/bash
+    
+5. TResting local mysql from docker
+docker run --rm -it --network host mysql:8 mysql -h host.docker.internal -P 3306 -u root -p
+
+
+
+
+
 ###Tables used by application
 ```
 1. user_info, user_info_seq - user information, encrypted passwords, and role.

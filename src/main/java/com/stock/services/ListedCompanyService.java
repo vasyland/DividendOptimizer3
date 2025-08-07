@@ -39,6 +39,13 @@ public class ListedCompanyService {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+    
+    public List<ListedCompanyDto> searchBySymbolOrName(String query) {
+        return listedCompanyRepository.searchBySymbolOrName(query)
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }    
 
     private ListedCompanyDto convertToDto(ListedCompany company) {
         return new ListedCompanyDto(

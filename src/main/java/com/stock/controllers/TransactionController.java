@@ -2,6 +2,8 @@ package com.stock.controllers;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,16 +18,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.stock.data.TransactionDto;
-import com.stock.model.CurrentPrice;
 import com.stock.model.CurrentPriceRequest;
+import com.stock.model.FmpCurrentPriceProjection;
 import com.stock.model.Transaction;
 import com.stock.model.TransactionCreateRequest;
 import com.stock.model.TransactionUpdateRequest;
 import com.stock.services.TransactionService;
 
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api")
@@ -120,10 +120,14 @@ public class TransactionController {
 		return new ResponseEntity<>(transaction, HttpStatus.OK);
 	}
 
-	
+	/**
+	 * 
+	 * @param request
+	 * @return
+	 */
 	@PostMapping("/symbolprice")
-	public ResponseEntity<CurrentPrice> getSymbolPrice(@RequestBody CurrentPriceRequest request) {	
-		CurrentPrice symbolPrice = transactionService.getSymbolCurrentPrice(request.getSymbol());
+	public ResponseEntity<FmpCurrentPriceProjection> getSymbolPrice(@RequestBody CurrentPriceRequest request) {	
+		FmpCurrentPriceProjection symbolPrice = transactionService.getSymbolCurrentPrice(request.getSymbol());
 	 	return new ResponseEntity<>(symbolPrice, HttpStatus.CREATED);
 	}
 	

@@ -13,6 +13,11 @@ java {
 	}
 }
 
+bootJar {
+    archiveBaseName.set("dividendoptimizer")
+    archiveVersion.set("0.0.1")
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -29,8 +34,15 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'mysql:mysql-connector-java:8.0.33'
+	
+	implementation 'com.stripe:stripe-java:24.5.0'
+	
+	// https://mvnrepository.com/artifact/com.kosherjava/zmanim
+	implementation("com.kosherjava:zmanim:2.5.0")
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.mysql:mysql-connector-j'
+	
+	//runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 //	testImplementation 'org.springframework.security:spring-security-test'

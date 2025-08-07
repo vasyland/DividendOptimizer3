@@ -2,52 +2,47 @@ package com.stock.services;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.stock.data.SymbolStatusDto;
-import com.stock.model.CurrentPrice;
+import com.stock.model.FmpCurrentPriceProjection;
 import com.stock.model.MarketingStatusSymbol;
 import com.stock.model.SymbolStatus;
 import com.stock.model.WatchSymbol;
-import com.stock.repositories.CurrentPriceRepository;
+import com.stock.repositories.FmpCurrentPriceRepository;
 import com.stock.repositories.MarketingSymbolStatusRepository;
 import com.stock.repositories.SymbolNativeRepository;
 import com.stock.repositories.SymbolStatusRepository;
 import com.stock.repositories.WatchSymbolRepository;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class SymbolServiceImpl implements SymbolService {
 	
 	private static final Logger log = LoggerFactory.getLogger(SymbolServiceImpl.class);
 	
-	@Autowired
 	private WatchSymbolRepository watchSymbolRepository;
-	@Autowired
-	private CurrentPriceRepository currentPriceRepository;
-	
+	private final FmpCurrentPriceRepository fmpCurrentPriceRepository;
 	private SymbolNativeRepository symbolNativeRepository1;
 	private SymbolStatusRepository symbolStatusRepository;
 	private MarketingSymbolStatusRepository marketingSymbolStatusRepository;
-	
-	public SymbolServiceImpl(WatchSymbolRepository watchSymbolRepository, CurrentPriceRepository currentPriceRepository,
-			SymbolNativeRepository symbolNativeRepository1, SymbolStatusRepository symbolStatusRepository,
+
+	public SymbolServiceImpl(WatchSymbolRepository watchSymbolRepository, 
+			FmpCurrentPriceRepository fmpCurrentPriceRepository, SymbolNativeRepository symbolNativeRepository1,
+			SymbolStatusRepository symbolStatusRepository,
 			MarketingSymbolStatusRepository marketingSymbolStatusRepository) {
 		super();
 		this.watchSymbolRepository = watchSymbolRepository;
-		this.currentPriceRepository = currentPriceRepository;
+		this.fmpCurrentPriceRepository = fmpCurrentPriceRepository;
 		this.symbolNativeRepository1 = symbolNativeRepository1;
 		this.symbolStatusRepository = symbolStatusRepository;
 		this.marketingSymbolStatusRepository = marketingSymbolStatusRepository;
@@ -134,8 +129,9 @@ public class SymbolServiceImpl implements SymbolService {
 		return caSymbolStatusList;
 	}
 
+	
 	/**
-	 * 
+	 * Canadian and US Dividend Buying Lists
 	 */
 	@Override
 	public List<SymbolStatusDto> getSymbolStatusList(List<String> exchanges) {
@@ -150,7 +146,7 @@ public class SymbolServiceImpl implements SymbolService {
 		Set<String> symbols = this.extractDistinctSymbols(watchSymbols);
 		
 		// Get current prices for the selected watch symbols
-		List<CurrentPrice> priceList = currentPriceRepository.findBySymbolIn(symbols);
+		List<FmpCurrentPriceProjection> priceDataList = fmpCurrentPriceRepository.findBySymbolIn(symbols);
 		
 		List<SymbolStatusDto> symbolStatusList = new ArrayList<>();
 		
@@ -163,11 +159,10 @@ public class SymbolServiceImpl implements SymbolService {
 		//Looping via watch symbols and calculating status
 		for(WatchSymbol w : watchSymbols ) {
 			
-			CurrentPrice price = priceList.stream()
-					.filter(t -> t.getSymbol().equals(w.getSymbol()))
-					.findFirst()
-					.orElse(null);
-			
+			FmpCurrentPriceProjection price = priceDataList.stream()
+                    .filter(cp -> cp.getSymbol().equals(w.getSymbol()))
+                    .findFirst()
+                    .orElse(null);
 			
 				if (price == null) {
 					log.warn("No current price found for symbol: " + w.getSymbol());
@@ -229,7 +224,6 @@ public class SymbolServiceImpl implements SymbolService {
 				symbolStatus.setSellPrice(sellPrice);
 				symbolStatus.setOverpricedAmount(overpricedAmount);
 				symbolStatus.setOverpricedPercentage(overpricedPercentage);
-				symbolStatus.setUpdatedOn(price.getCreatedOn());
 				symbolStatus.setSellPointYield(sellPointYield);
 			    symbolStatus.setRecommendedAction(action);
 			    symbolStatus.setUpdatedOn(price.getCreatedOn());

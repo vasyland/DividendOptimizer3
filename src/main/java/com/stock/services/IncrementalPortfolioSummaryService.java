@@ -8,11 +8,11 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.stock.data.PortfolioSummaryDTO;
-import com.stock.model.CurrentPrice;
+import com.stock.model.FmpCurrentPriceProjection;
 import com.stock.model.Holding;
 import com.stock.model.Portfolio;
 import com.stock.model.PortfolioSummary;
-import com.stock.repositories.CurrentPriceRepository;
+import com.stock.repositories.FmpCurrentPriceRepository;
 import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.PortfolioSummaryRepository;
@@ -27,26 +27,27 @@ public class IncrementalPortfolioSummaryService {
 
     private final PortfolioRepository portfolioRepository;
     private final HoldingRepository holdingRepository;
-    private final CurrentPriceRepository currentPriceRepository;
+    private final FmpCurrentPriceRepository fmpCurrentPriceRepository;
     private final PortfolioSummaryRepository portfolioSummaryRepository;
-    
-    
-    
-
-    public IncrementalPortfolioSummaryService(PortfolioRepository portfolioRepository,
-			HoldingRepository holdingRepository, CurrentPriceRepository currentPriceRepository,
+ 
+	public IncrementalPortfolioSummaryService(PortfolioRepository portfolioRepository,
+			HoldingRepository holdingRepository,
+			FmpCurrentPriceRepository fmpCurrentPriceRepository,
 			PortfolioSummaryRepository portfolioSummaryRepository) {
 		super();
 		this.portfolioRepository = portfolioRepository;
 		this.holdingRepository = holdingRepository;
-		this.currentPriceRepository = currentPriceRepository;
+		this.fmpCurrentPriceRepository = fmpCurrentPriceRepository;
 		this.portfolioSummaryRepository = portfolioSummaryRepository;
 	}
 
 
-
-
-	public PortfolioSummaryDTO calculatePortfolioSummary(Long portfolioId) {
+	/**
+	 * 
+	 * @param portfolioId
+	 * @return
+	 */
+    public PortfolioSummaryDTO calculatePortfolioSummary(Long portfolioId) {
     	
         Portfolio portfolio = portfolioRepository.findById(portfolioId)
                 .orElseThrow(() -> new RuntimeException("Portfolio not found"));
@@ -58,12 +59,12 @@ public class IncrementalPortfolioSummaryService {
         BigDecimal unrealizedPnL = BigDecimal.ZERO;
 
         for (Holding h : holdings) {
-        	
-            List<CurrentPrice> prices = currentPriceRepository.findBySymbol(h.getSymbol());
+
+            FmpCurrentPriceProjection currentPriceData = fmpCurrentPriceRepository.findBySymbol(h.getSymbol()).get();
             
-            if (!prices.isEmpty()) {
+            if (currentPriceData != null) {
             	
-                BigDecimal marketPrice = prices.get(0).getPrice();
+                BigDecimal marketPrice = currentPriceData.getPrice();
                 BigDecimal marketValue = marketPrice.multiply(BigDecimal.valueOf(h.getShares()));
                 totalMarketValue = totalMarketValue.add(marketValue);
                 unrealizedPnL = unrealizedPnL.add(marketValue.subtract(h.getBookCost()));

@@ -12,20 +12,18 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.stock.data.HoldingDto;
-import com.stock.data.HoldingDto;
 import com.stock.data.PortfolioSummaryDTO;
 import com.stock.data.PortfolioUnrealizedPnLDto;
-import com.stock.model.CurrentPrice;
+import com.stock.model.FmpCurrentPriceProjection;
 import com.stock.model.Holding;
 import com.stock.model.Portfolio;
 import com.stock.model.PortfolioDto;
 import com.stock.model.Transaction;
 import com.stock.model.TransactionType;
-import com.stock.repositories.CurrentPriceRepository;
+import com.stock.repositories.FmpCurrentPriceRepository;
 import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.TransactionRepository;
@@ -35,17 +33,20 @@ public class PortfolioSummaryService {
 	
 	private static final Logger log = LoggerFactory.getLogger(PortfolioSummaryService.class);
 
-	@Autowired
 	private PortfolioRepository portfolioRepository;
-
-	@Autowired
 	private TransactionRepository transactionRepository;
-
-	@Autowired
 	private HoldingRepository holdingRepository;
+	private final FmpCurrentPriceRepository fmpCurrentPriceRepository;
 
-	@Autowired
-	private CurrentPriceRepository currentPriceRepository;
+	public PortfolioSummaryService(PortfolioRepository portfolioRepository, TransactionRepository transactionRepository,
+			HoldingRepository holdingRepository, 
+			FmpCurrentPriceRepository fmpCurrentPriceRepository) {
+		super();
+		this.portfolioRepository = portfolioRepository;
+		this.transactionRepository = transactionRepository;
+		this.holdingRepository = holdingRepository;
+		this.fmpCurrentPriceRepository = fmpCurrentPriceRepository;
+	}
 
 	public PortfolioSummaryDTO calculatePortfolioSummary(Long portfolioId) {
 
@@ -64,8 +65,7 @@ public class PortfolioSummaryService {
 		BigDecimal unrealizedPnL = BigDecimal.ZERO;
 		BigDecimal totalMarketValue = BigDecimal.ZERO;
 
-		// Group all buy transactions by symbol to estimate avg cost for realized PnL
-		// calc
+		// Group all buy transactions by symbol to estimate avg cost for realized PnL calculation
 		Map<String, BigDecimal> avgCosts = holdings.stream()
 				.collect(Collectors.toMap(Holding::getSymbol, Holding::getAvgCostPerShare));
 
@@ -85,10 +85,12 @@ public class PortfolioSummaryService {
 
 		// Compute unrealized PnL and market value
 		for (Holding h : holdings) {
-			Optional<CurrentPrice> maybePrice = Optional
-					.ofNullable(currentPriceRepository.findBySymbol(h.getSymbol()).get(0));
-			if (maybePrice.isPresent()) {
-				BigDecimal marketPrice = maybePrice.get().getPrice();
+			
+			FmpCurrentPriceProjection currentPriceData = fmpCurrentPriceRepository.findBySymbol(h.getSymbol()).get();
+			
+			if (currentPriceData != null) {
+				
+				BigDecimal marketPrice = currentPriceData.getPrice();
 				BigDecimal marketValue = marketPrice.multiply(BigDecimal.valueOf(h.getShares()));
 				totalMarketValue = totalMarketValue.add(marketValue);
 
@@ -235,18 +237,19 @@ public class PortfolioSummaryService {
 		Set<String> symbols = this.extractDistinctSymbols(holdings);
 		
 		// Get current prices for the symbols
-		List<CurrentPrice> priceList = currentPriceRepository.findBySymbolIn(symbols);
+		List<FmpCurrentPriceProjection> priceList = fmpCurrentPriceRepository.findBySymbolIn(symbols);
 
 		var holdingPnLList = new ArrayList<HoldingDto>();
 		
 		// Calculate Holding PnL
 		for (Holding h : holdings) {
 
-			CurrentPrice price = priceList.stream()
-					.filter(t -> t.getSymbol().equals(h.getSymbol()))
+			// Getting current price data
+			FmpCurrentPriceProjection price = priceList.stream()
+					.filter(m -> m.getSymbol().equals(h.getSymbol()))
 					.findFirst()
-					.orElse(null);
-
+					.orElse(null);			
+			
 			if (price != null) {
 				var holdingPnL = new HoldingDto();
 
@@ -348,23 +351,29 @@ public class PortfolioSummaryService {
 	}
 
 	
+	/**
+	 * 
+	 * @param portfolioId
+	 * @return
+	 */
 	public PortfolioDto getPortfolioData(long portfolioId) {
+		
 		// Get a list of all user holdings
 		List<Holding> holdings = holdingRepository.findByPortfolioId(portfolioId);
 		// Get distinct symbols from the list of holdings
 		Set<String> symbols = this.extractDistinctSymbols(holdings);
 		// Get current prices for the symbols
-		List<CurrentPrice> priceList = currentPriceRepository.findBySymbolIn(symbols);
+		List<FmpCurrentPriceProjection> priceList = fmpCurrentPriceRepository.findBySymbolIn(symbols);
 
 		// Calculate Holding PnL
 		var holdingPnLList = new ArrayList<HoldingDto>();
 		for (Holding h : holdings) {
 
-			CurrentPrice price = priceList.stream()
-					.filter(t -> t.getSymbol().equals(h.getSymbol()))
+			FmpCurrentPriceProjection price = priceList.stream()
+					.filter(m -> m.getSymbol().equals(h.getSymbol()))
 					.findFirst()
-					.orElse(null);
-
+					.orElse(null);			
+			
 			if (price != null) {
 				var holdingPnL = new HoldingDto();
 
@@ -405,6 +414,7 @@ public class PortfolioSummaryService {
 		pdto.setTotalValue(origPortfolio.getCurrentCash().add(summary.getCurrentCost())
 				.add(summary.getUnrealizedPnL()));
 		pdto.setNumberOfholdings(summary.getNumberOfHoldings());
+		
 		// Log the portfolio DTO
 		System.out.println("Single Case: Portfolio ID: " + pdto.getId()
 				+ ", Name: " + pdto.getName()
@@ -436,17 +446,19 @@ public class PortfolioSummaryService {
 		Set<String> symbols = this.extractDistinctSymbols(holdings);
 		
 		// Get current prices for the symbols
-		List<CurrentPrice> priceList = currentPriceRepository.findBySymbolIn(symbols);
-
+		List<FmpCurrentPriceProjection> priceListNew = fmpCurrentPriceRepository.findBySymbolIn(symbols);
+		
 		// Calculate Holding PnL
 		var holdingPnLList = new ArrayList<HoldingDto>();
 		
 		for (Holding h : holdings) {
-			CurrentPrice price = priceList.stream()
-					.filter(t -> t.getSymbol().equals(h.getSymbol()))
-					.findFirst()
-					.orElse(null);
 
+			// Set the current price for each transaction
+			FmpCurrentPriceProjection price = priceListNew.stream()
+					.filter(m -> m.getSymbol().equals(h.getSymbol()))
+					.findFirst()
+					.orElse(null);			
+			
 			if (price != null) {
 				var holdingPnL = new HoldingDto();
 

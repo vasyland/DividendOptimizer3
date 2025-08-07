@@ -32,7 +32,7 @@ commit;
 
 -- User Refresh Tokens 
 CREATE TABLE `refresh_tokens` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint DEFAULT NULL,
   `refresh_token` varchar(10000) NOT NULL,
   `revoked` bit(1) DEFAULT NULL,
@@ -82,27 +82,6 @@ CREATE TABLE `watch_symbol` (
   PRIMARY KEY (`symbol`)
 )
 
-
-
-
---  These tables are not hooked to user info table 
-CREATE TABLE `volatility_date` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `day_date` datetime DEFAULT CURRENT_TIMESTAMP,
-  `action_description` varchar(450) DEFAULT NULL,
-  `description` varchar(450) DEFAULT NULL,
-  `active` int DEFAULT NULL,
-  `active_from_date` datetime DEFAULT NULL,
-  `active_to_date` datetime DEFAULT NULL,
-  `created_on` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_on` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=83 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-CREATE TABLE `volatility_date_seq` (
-  `next_val` BIGINT NOT NULL
-);
-INSERT INTO volatility_date_seq (next_val) VALUES (1);
 
 /**
  * Wheather recordings. This table is not used by the applicaiton yet.
@@ -331,11 +310,75 @@ CREATE TABLE `symbol_status` (
 );
 
 
+use golem;
+CREATE TABLE `jewish_events` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `hebrew_year` int NOT NULL,
+  `hebrew_month` varchar(450) NOT NULL,
+  `hebrew_day` int NOT NULL,
+  `event` varchar(60) DEFAULT NULL,
+  `description` varchar(480) DEFAULT NULL,
+  `duration_days` int DEFAULT NULL,
+  `info_source` varchar(260) DEFAULT NULL,
+  `created_on` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_on` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
 
 
 
+use iwm;
+CREATE TABLE fmp_current_price (
+    symbol VARCHAR(20) NOT NULL,
+    name VARCHAR(255),
+    price DECIMAL(16, 8),
+    changes_percentage DECIMAL(10, 6),
+    price_change DECIMAL(16, 8),                -- `change` is a reserved word
+    day_low DECIMAL(16, 8),
+    day_high DECIMAL(16, 8),
+    year_high DECIMAL(16, 8),
+    year_low DECIMAL(16, 8),
+    market_cap BIGINT,
+    price_avg50 DECIMAL(16, 8),
+    price_avg200 DECIMAL(16, 8),
+    exchange VARCHAR(10),
+    volume BIGINT,
+    avg_volume BIGINT,
+    open_price DECIMAL(16, 8),                  -- `open` is also reserved
+    previous_close DECIMAL(16, 8),
+    eps DECIMAL(16, 8),
+    pe DECIMAL(16, 8),
+    earnings_announcement DATETIME,
+    shares_outstanding BIGINT,
+    created_on DATETIME,                   -- `timestamp` is a reserved word
+    INDEX idx_symbol (symbol)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
+CREATE TABLE fmp_history_price (
+    symbol VARCHAR(20) NOT NULL,
+    name VARCHAR(255),
+    price DECIMAL(16, 8),
+    changes_percentage DECIMAL(10, 6),
+    price_change DECIMAL(16, 8),                -- `change` is a reserved word
+    day_low DECIMAL(16, 8),
+    day_high DECIMAL(16, 8),
+    year_high DECIMAL(16, 8),
+    year_low DECIMAL(16, 8),
+    market_cap BIGINT,
+    price_avg50 DECIMAL(16, 8),
+    price_avg200 DECIMAL(16, 8),
+    exchange VARCHAR(10),
+    volume BIGINT,
+    avg_volume BIGINT,
+    open_price DECIMAL(16, 8),                  -- `open` is also reserved
+    previous_close DECIMAL(16, 8),
+    eps DECIMAL(16, 8),
+    pe DECIMAL(16, 8),
+    earnings_announcement DATETIME,
+    shares_outstanding BIGINT,
+    created_on DATETIME,                   -- `timestamp` is a reserved word
+    INDEX idx_symbol (symbol)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 

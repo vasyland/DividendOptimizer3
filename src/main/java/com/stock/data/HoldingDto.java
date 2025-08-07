@@ -11,6 +11,7 @@ public class HoldingDto {
 	private BigDecimal avgCostPerShare;
 	private BigDecimal bookCost;
 	private BigDecimal unrealizedPnL;
+	private BigDecimal unrealizedPnlPercent;
 	private BigDecimal realizedPnL;
 	private BigDecimal marketValue;
 	private String currency;
@@ -83,6 +84,14 @@ public class HoldingDto {
 	public void setRealizedPnL(BigDecimal realizedPnL) {
 		this.realizedPnL = realizedPnL;
 	}
+	
+	public BigDecimal getUnrealizedPnlPercent() {
+		return unrealizedPnlPercent;
+	}
+
+	public void setUnrealizedPnlPercent(BigDecimal unrealizedPnlPercent) {
+		this.unrealizedPnlPercent = unrealizedPnlPercent;
+	}
 
 	@Override
 	public String toString() {
@@ -90,8 +99,4 @@ public class HoldingDto {
 				+ ", avgCostPerShare=" + avgCostPerShare + ", bookCost=" + bookCost + ", unrealizedPnL=" + unrealizedPnL
 				+ ", marketValue=" + marketValue + ", currency=" + currency + "]";
 	}
-	
-	
-	
-	
 }

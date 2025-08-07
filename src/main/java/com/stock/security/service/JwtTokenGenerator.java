@@ -72,7 +72,7 @@ public class JwtTokenGenerator {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("iwm5")
                 .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plus(3, ChronoUnit.HOURS))  // Instant.now().plus(3, ChronoUnit.HOURS)
+                .expiresAt(Instant.now().plus(3, ChronoUnit.DAYS))  // Instant.now().plus(3, ChronoUnit.HOURS)
                 .subject(userEmail)
                 .claim("scope", permissions)
                 .build();

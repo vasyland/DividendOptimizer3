@@ -30,13 +30,13 @@ import com.stock.data.PortfolioSummaryDTO;
 import com.stock.data.TransactionDto;
 import com.stock.exceptions.HoldingNotFoundException;
 import com.stock.exceptions.UnauthorizedPortfolioAccessException;
-import com.stock.model.CurrentPrice;
+import com.stock.model.FmpCurrentPriceProjection;
 import com.stock.model.Holding;
 import com.stock.model.Portfolio;
 import com.stock.model.Transaction;
 import com.stock.model.TransactionCreateRequest;
 import com.stock.model.TransactionType;
-import com.stock.repositories.CurrentPriceRepository;
+import com.stock.repositories.FmpCurrentPriceRepository;
 import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.TransactionRepository;
@@ -54,18 +54,17 @@ public class TransactionService {
 	private final HoldingRepository holdingRepository;
 	private final UserService userService;
 	private final HoldingsService holdingsService;
-	private final CurrentPriceRepository currentPriceRepository;
-//	private final PortfolioSummaryService portfolioSummaryService;
+	private final FmpCurrentPriceRepository fmpCurrentPriceRepository;
 	private final IncrementalPortfolioSummaryService incrementalPortfolioSummaryService;
 	private final IncrementalHoldingsService incrementalHoldingsService;
-	
 	private final IncrementalPortfolioSummaryUpdater incrementalPortfolioSummaryUpdater;
-	
-	
-	
-	public TransactionService(TransactionRepository transactionRepository, PortfolioRepository portfolioRepository,
-			HoldingRepository holdingRepository, UserService userService, HoldingsService holdingsService,
-			CurrentPriceRepository currentPriceRepository,
+
+	public TransactionService(TransactionRepository transactionRepository, 
+			PortfolioRepository portfolioRepository,
+			HoldingRepository holdingRepository, 
+			UserService userService, 
+			HoldingsService holdingsService,
+			FmpCurrentPriceRepository fmpCurrentPriceRepository,
 			IncrementalPortfolioSummaryService incrementalPortfolioSummaryService,
 			IncrementalHoldingsService incrementalHoldingsService,
 			IncrementalPortfolioSummaryUpdater incrementalPortfolioSummaryUpdater) {
@@ -75,11 +74,12 @@ public class TransactionService {
 		this.holdingRepository = holdingRepository;
 		this.userService = userService;
 		this.holdingsService = holdingsService;
-		this.currentPriceRepository = currentPriceRepository;
+		this.fmpCurrentPriceRepository = fmpCurrentPriceRepository;
 		this.incrementalPortfolioSummaryService = incrementalPortfolioSummaryService;
 		this.incrementalHoldingsService = incrementalHoldingsService;
 		this.incrementalPortfolioSummaryUpdater = incrementalPortfolioSummaryUpdater;
 	}
+
 
 	/**
 	 * 1. Buy transaction goes strait forward into db
@@ -340,29 +340,30 @@ public class TransactionService {
 		
 	/**
 	 * Get the latest price for a symbol
+	 * 
 	 * @param symbol
 	 * @return
 	 */
-	public CurrentPrice getSymbolCurrentPrice(String symbol) {
-		CurrentPrice currentPrice = currentPriceRepository.findTopBySymbolOrderByCreatedOnDesc(symbol);
+	public FmpCurrentPriceProjection getSymbolCurrentPrice(String symbol) {
+		FmpCurrentPriceProjection currentPrice = fmpCurrentPriceRepository.findBySymbol(symbol).get();
 		if (currentPrice == null) {
 			throw new IllegalArgumentException("Current price not found");
 		}
 		return currentPrice;
 	}
-	
-	
+
 	/**
 	 * Get the latest prices for a list of symbols
+	 * 
 	 * @param symbols
 	 * @return
 	 */
-	public List<CurrentPrice> getLatestPricesForSymbols(List<String> symbols) {
-        if (symbols == null || symbols.isEmpty()) {
-            return List.of();
-        }
-        return currentPriceRepository.findLatestPricesForSymbols(symbols);
-    }
+	public List<FmpCurrentPriceProjection> getLatestPricesForSymbols(Set<String> symbols) {
+		if (symbols == null || symbols.isEmpty()) {
+			return List.of();
+		}
+		return fmpCurrentPriceRepository.findBySymbolIn(symbols);
+	}
 	
 	
 	public List<TransactionDto> getTransactionDtos(Long portfolioId) {
@@ -379,17 +380,18 @@ public class TransactionService {
         Set<String> symbols = this.extractDistinctSymbols(transactions);
         
         // Get current prices for the symbols
-     	List<CurrentPrice> priceList = currentPriceRepository.findBySymbolIn(symbols);
+     	List<FmpCurrentPriceProjection> priceList = fmpCurrentPriceRepository.findBySymbolIn(symbols);
      	
      	List<TransactionDto> transactionDtos = new ArrayList<>();
      	
 		for (Transaction t : transactions) {
 			
 			// Set the current price for each transaction
-			CurrentPrice price = priceList.stream()
+			FmpCurrentPriceProjection price = priceList.stream()
 					.filter(m -> m.getSymbol().equals(t.getSymbol()))
 					.findFirst()
 					.orElse(null);
+			
 			
 			if (price != null) {
 //				t.setCurrentPrice(price.getPrice());

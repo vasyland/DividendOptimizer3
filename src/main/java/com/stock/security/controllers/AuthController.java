@@ -165,18 +165,6 @@ public class AuthController {
 //  return ResponseEntity.ok(authService.getJwtTokensAfterAuthentication(authentication, response));
 //}
 
-//// Before OCt 3
-//@PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
-//@PostMapping ("/refresh-token")
-//public ResponseEntity<?> getAccessTokenOrig(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader){
-//  return ResponseEntity.ok(authService.getAccessTokenUsingRefreshToken(authorizationHeader));
-//}
-
-//@GetMapping("/us-buy-list")
-//public @ResponseBody List<SymbolStatus> getUsRecommendedBuySymbols() {
-//return symbolService.getUsRecomendedBuySymbols();
-//}
-
 
 //@PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
 //@PostMapping ("/log-out")

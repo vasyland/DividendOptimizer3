@@ -16,12 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.stock.data.HoldingDto;
-import com.stock.model.CurrentPrice;
+import com.stock.model.FmpCurrentPriceProjection;
 import com.stock.model.Holding;
-import com.stock.model.Portfolio;
 import com.stock.model.Transaction;
 import com.stock.model.TransactionType;
-import com.stock.repositories.CurrentPriceRepository;
+import com.stock.repositories.FmpCurrentPriceRepository;
 import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.TransactionRepository;
@@ -33,16 +32,16 @@ public class HoldingsService {
 	
     private final TransactionRepository transactionRepository;
     private final HoldingRepository holdingRepository;
-    private CurrentPriceRepository currentPriceRepository;
     private final PortfolioRepository portfolioRepo;
+    private final FmpCurrentPriceRepository fmpCurrentPriceRepository;
 
 	public HoldingsService(TransactionRepository transactionRepository, HoldingRepository holdingRepository,
-			CurrentPriceRepository currentPriceRepository, PortfolioRepository portfolioRepo) {
+			PortfolioRepository portfolioRepo, FmpCurrentPriceRepository fmpCurrentPriceRepository) {
 		super();
 		this.transactionRepository = transactionRepository;
 		this.holdingRepository = holdingRepository;
-		this.currentPriceRepository = currentPriceRepository;
 		this.portfolioRepo = portfolioRepo;
+		this.fmpCurrentPriceRepository = fmpCurrentPriceRepository;
 	}
 
 
@@ -213,7 +212,6 @@ public class HoldingsService {
     }
 
     
-    
     /**
      * Calculating current holdings. Those transactions that are sold are not included. 
      * @param portfolioId
@@ -225,14 +223,19 @@ public class HoldingsService {
     		holdingRepository.deleteByPortfolioId(portfolioId);
     	}
     	
-    	
-        Portfolio portfolio = portfolioRepo.findById(portfolioId)
-            .orElseThrow(() -> new RuntimeException("Portfolio not found"));
+//        Portfolio portfolio = portfolioRepo.findById(portfolioId)
+//            .orElseThrow(() -> new RuntimeException("Portfolio not found"));
 
         List<Transaction> transactions = transactionRepository.findByPortfolioId(portfolioId);
 
         Set<String> symbols = this.extractDistinctSymbols(transactions);
-        List<CurrentPrice> priceList = currentPriceRepository.findBySymbolIn(symbols);
+        log.info("#1 SYMBOLS: " + symbols.toString());
+        
+        List<FmpCurrentPriceProjection> priceListNew = fmpCurrentPriceRepository.findBySymbolIn(symbols);
+        log.info("#1-2 NUMBER OF NEW PRICES:  " + priceListNew.toString());
+        priceListNew.forEach(t ->{
+        	log.info("1-2-2 Symbol = " + t.getSymbol() + ", t.getPrice " + t.getPrice());
+        });
 
         Map<String, List<Transaction>> symbolTransactions = transactions.stream()
             .collect(Collectors.groupingBy(Transaction::getSymbol));
@@ -272,14 +275,14 @@ public class HoldingsService {
                 }
             }
 
-            // Only include symbols with remaining shares
+            // Only include symbols with remaining shares   .map(CurrentPrice::getPrice)
             if (totalShares > 0) {
                 BigDecimal avgCostPerShare = totalCost.divide(BigDecimal.valueOf(totalShares), 2, RoundingMode.HALF_UP);
                 BigDecimal bookCost = totalCost.setScale(2, RoundingMode.HALF_UP);
 
-                BigDecimal currentPrice = priceList.stream()
+                BigDecimal currentPrice = priceListNew.stream()
                         .filter(cp -> cp.getSymbol().equals(symbol))
-                        .map(CurrentPrice::getPrice)
+                        .map(FmpCurrentPriceProjection::getPrice)
                         .findFirst()
                         .orElse(BigDecimal.ZERO);
 
@@ -296,6 +299,21 @@ public class HoldingsService {
                 dto.setMarketValue(marketValue.setScale(2, RoundingMode.HALF_UP));
                 dto.setCurrency(txs.get(0).getCurrency());
                 dto.setRealizedPnL(realizedPnL.setScale(2, RoundingMode.HALF_UP));
+                
+//                BigDecimal pnlPercent = BigDecimal.ZERO;
+//    			if (initialCash.compareTo(BigDecimal.ZERO) > 0) {
+//    			    pnlPercent = pnl.divide(initialCash, 4, RoundingMode.HALF_UP)
+//    			                    .multiply(BigDecimal.valueOf(100))
+//    			                    .setScale(2, RoundingMode.HALF_UP);
+//    			}
+                BigDecimal unrealizedPnlPercent = BigDecimal.ZERO;
+                if (bookCost.compareTo(BigDecimal.ZERO) > 0) {
+    			    unrealizedPnlPercent = unrealizedPnL.divide(bookCost, 4, RoundingMode.HALF_UP)
+    			                    .multiply(BigDecimal.valueOf(100))
+    			                    .setScale(2, RoundingMode.HALF_UP);
+    			}
+                dto.setUnrealizedPnlPercent(unrealizedPnlPercent);
+                
                 holdings.add(dto);
                 
 				if (isTableUpdate) {
@@ -308,6 +326,7 @@ public class HoldingsService {
 					holding.setBookCost(bookCost);
 					holding.setCurrency(txs.get(0).getCurrency());
 					holding.setRealizedPnL(realizedPnL.setScale(2, RoundingMode.HALF_UP));
+					
 					// Save the holding to the repository
 					holdingRepository.save(holding);
 				}
@@ -315,8 +334,8 @@ public class HoldingsService {
         }
         return holdings;
     }
-	
-	
+
+ 
     /**
 	 * Extract distinct symbols from a list of holdings
 	 * 
