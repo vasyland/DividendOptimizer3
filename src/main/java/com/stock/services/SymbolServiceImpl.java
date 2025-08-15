@@ -16,13 +16,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.stock.data.SymbolStatusDto;
 import com.stock.model.FmpCurrentPriceProjection;
-import com.stock.model.MarketingStatusSymbol;
-import com.stock.model.SymbolStatus;
 import com.stock.model.WatchSymbol;
 import com.stock.repositories.FmpCurrentPriceRepository;
-import com.stock.repositories.MarketingSymbolStatusRepository;
 import com.stock.repositories.SymbolNativeRepository;
-import com.stock.repositories.SymbolStatusRepository;
 import com.stock.repositories.WatchSymbolRepository;
 
 @Service
@@ -33,102 +29,23 @@ public class SymbolServiceImpl implements SymbolService {
 	private WatchSymbolRepository watchSymbolRepository;
 	private final FmpCurrentPriceRepository fmpCurrentPriceRepository;
 	private SymbolNativeRepository symbolNativeRepository1;
-	private SymbolStatusRepository symbolStatusRepository;
-	private MarketingSymbolStatusRepository marketingSymbolStatusRepository;
-
+	
 	public SymbolServiceImpl(WatchSymbolRepository watchSymbolRepository, 
-			FmpCurrentPriceRepository fmpCurrentPriceRepository, SymbolNativeRepository symbolNativeRepository1,
-			SymbolStatusRepository symbolStatusRepository,
-			MarketingSymbolStatusRepository marketingSymbolStatusRepository) {
+			FmpCurrentPriceRepository fmpCurrentPriceRepository, 
+			SymbolNativeRepository symbolNativeRepository1
+			) {
 		super();
 		this.watchSymbolRepository = watchSymbolRepository;
 		this.fmpCurrentPriceRepository = fmpCurrentPriceRepository;
 		this.symbolNativeRepository1 = symbolNativeRepository1;
-		this.symbolStatusRepository = symbolStatusRepository;
-		this.marketingSymbolStatusRepository = marketingSymbolStatusRepository;
+		
 	}
 
 	@Override
 	public List<String> getSymbols() {
 		return symbolNativeRepository1.getSymbolForProcessing();
 	}
-
-	@Override
-	public List<SymbolStatus> getCaRecomendedBuySymbols() {
-		
-		List<String> actions = Arrays.asList(new String[]{"Buy"});  //,"Hold"
-		return symbolStatusRepository.getCaSymbolsByRecommendedAction(actions);
-	}
-
-	@Override
-	public List<SymbolStatus> getUsRecomendedBuySymbols() {
-		List<String> actions = Arrays.asList(new String[]{"Buy"}); // ,"Hold"
-		return symbolStatusRepository.getUsSymbolsByRecommendedAction(actions);
-	}
-
-	@Override
-	public List<MarketingStatusSymbol> getCaMarketingStatusSymbols() {
-		return marketingSymbolStatusRepository.getCaMarketingSymbols();
-	}
-
-	@Override
-	public List<MarketingStatusSymbol> getUsMarketingStatusSymbols() {
-		return marketingSymbolStatusRepository.getUsMarketingSymbols();
-	}
 	
-	
-	/** 
-	 * Getting CA companies only with .TO
-	 */
-	@Override
-	public List<SymbolStatusDto> getCaSymbolStatusList() {
-		
-		List<SymbolStatus> caList = symbolStatusRepository.getCaSymbols();
-		log.info("CA List size: " + caList.size());
-		
-		if (caList == null || caList.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No data found");
-		}
-		
-		List<SymbolStatusDto> caSymbolStatusList = new ArrayList<>();
-		
-		for (SymbolStatus symbolStatus : caList) {
-			
-			SymbolStatusDto symbolStatusDto = new SymbolStatusDto();
-			
-			symbolStatusDto.setSymbol(symbolStatus.getSymbol());
-			symbolStatusDto.setCurrentPrice(symbolStatus.getCurrentPrice());
-			symbolStatusDto.setCurrentYield(symbolStatus.getCurrentYield());
-			symbolStatusDto.setLowerYield(symbolStatus.getLowerYield());
-			symbolStatusDto.setUpperYield(symbolStatus.getUpperYield());
-			symbolStatusDto.setAllowedBuyPrice(symbolStatus.getAllowedBuyPrice());
-			symbolStatusDto.setAllowedBuyYield(symbolStatus.getAllowedBuyYield());
-			symbolStatusDto.setBestBuyPrice(symbolStatus.getBestBuyPrice());
-			symbolStatusDto.setQuoterlyDividendAmount(symbolStatus.getQuoterlyDividendAmount());
-			symbolStatusDto.setSellPointYield(symbolStatus.getSellPointYield());
-			symbolStatusDto.setUpdatedOn(symbolStatus.getUpdatedOn());
-			symbolStatusDto.setRecommendedAction(symbolStatus.getRecommendedAction());
-			
-//			// Calculating sell price base low yeild and quaterly dividend amount
-			BigDecimal sellPrice = symbolStatus.getQuoterlyDividendAmount().multiply(BigDecimal.valueOf(400)).divide(symbolStatus.getLowerYield(), RoundingMode.HALF_EVEN);
-			//Calculating overpriced amount
-			BigDecimal overpricedAmount = symbolStatus.getCurrentPrice().subtract(symbolStatus.getBestBuyPrice());
-			
-			// Calculating overpriced percentage
-			BigDecimal overpricedPercentage = (symbolStatus.getCurrentPrice().subtract(symbolStatus.getBestBuyPrice()))
-				    .divide(symbolStatus.getCurrentPrice(), 4, RoundingMode.HALF_EVEN) // Scale set to 4 for precision
-				    .multiply(BigDecimal.valueOf(100))
-				    .setScale(2, RoundingMode.HALF_EVEN);
-			
-			symbolStatusDto.setSellPrice(sellPrice);
-			symbolStatusDto.setOverpricedAmount(overpricedAmount);
-			symbolStatusDto.setOverpricedPercentage(overpricedPercentage);
-			
-			caSymbolStatusList.add(symbolStatusDto);
-		}
-		return caSymbolStatusList;
-	}
-
 	
 	/**
 	 * Canadian and US Dividend Buying Lists
@@ -245,5 +162,7 @@ public class SymbolServiceImpl implements SymbolService {
 				.filter(symbol -> symbol != null && !symbol.isBlank())
 				.collect(Collectors.toSet());
 	}
+
+	
 	
 }

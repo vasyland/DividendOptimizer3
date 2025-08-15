@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository;
 import com.stock.model.SymbolStatus;
 
 import jakarta.persistence.EntityManager;
-import com.stock.model.SymbolStatus;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
@@ -46,27 +45,27 @@ public class SymbolNativeRepository {
 	    return sql3.getResultList();
 	}
 
-	/**
-	 * Getting recommended Buy List
-	 * @return
-	 */
-	public List<SymbolStatus> getRecomendedBuySymbols() {
-		
-		Query sql = entityManager.createNativeQuery("select symbol, "
-				+ "current_price,"
-				+ "quaterly_dividend_amount, "
-				+ "current_yield, "
-				+ "upper_yield, "				
-				+ "lower_yield, "				
-				+ "allowedtobuy_yield, "
-				+ "sell_point_yield, "				
-				+ "recommended_action, "				
-				+ "updated_on "				
-				+ "from symbol_status "
-		        + "where recommended_action = 'Buy' order by symbol");		
-		
-	    return sql.getResultList();
-	}
+//	/**
+//	 * Getting recommended Buy List
+//	 * @return
+//	 */
+//	public List<SymbolStatus> getRecomendedBuySymbols() {
+//		
+//		Query sql = entityManager.createNativeQuery("select symbol, "
+//				+ "current_price,"
+//				+ "quaterly_dividend_amount, "
+//				+ "current_yield, "
+//				+ "upper_yield, "				
+//				+ "lower_yield, "				
+//				+ "allowedtobuy_yield, "
+//				+ "sell_point_yield, "				
+//				+ "recommended_action, "				
+//				+ "updated_on "				
+//				+ "from symbol_status "
+//		        + "where recommended_action = 'Buy' order by symbol");		
+//		
+//	    return sql.getResultList();
+//	}
 	
 //	List<Symbol> getSymbolsForProcessing();
 }

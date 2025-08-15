@@ -15,8 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.stock.data.CompanyPriceProjection;
 import com.stock.data.ListedCompanyDto;
-import com.stock.model.MarketingStatusSymbol;
-import com.stock.model.SymbolStatus;
 import com.stock.model.VolatilityDay;
 import com.stock.services.CompanyPriceService;
 import com.stock.services.FeatureService;
@@ -81,15 +79,6 @@ public class FreePointsController {
         return listedCompanyService.searchByNamePrefix(prefix);
     }
 	
-	@GetMapping("/free-ca-buy-list")
-	public @ResponseBody List<SymbolStatus> getFreeCaRecommendedBuySymbols() {
-		return symbolService.getCaRecomendedBuySymbols();
-	}
-	
-	@GetMapping("/free-us-buy-list")
-	public @ResponseBody List<SymbolStatus> getFreeUsRecommendedBuySymbols() {
-		return symbolService.getUsRecomendedBuySymbols();
-	}
 
 	@GetMapping("/volatile-days")
 	public @ResponseBody List<VolatilityDay> getVolatileDays() {
@@ -101,23 +90,5 @@ public class FreePointsController {
 	public Greeting greeting(@RequestParam(value = "name", defaultValue = "World") final String name) {
 		return new Greeting(counter.incrementAndGet(), String.format(FreePointsController.template, name));
 	}
-	
-	@GetMapping("/marketing-ca-list")
-	public ResponseEntity<List<MarketingStatusSymbol>> getCaMarketingSymbols() {
-		return ResponseEntity.ok()
-				.contentType(MediaType.APPLICATION_JSON)
-				.body(symbolService.getCaMarketingStatusSymbols());
-	}	
-	
-//	orig
-//	@GetMapping("/marketing-ca-list")
-//	public @ResponseBody List<MarketingStatusSymbol> getCaMarketingSymbols() {
-//		return symbolService.getCaMarketingStatusSymbols();
-//	}
-	
-	@GetMapping("/marketing-us-list")
-	public @ResponseBody List<MarketingStatusSymbol> getUsMarketingSymbols() {
-		return symbolService.getUsMarketingStatusSymbols();
-	}	
 	
 }
