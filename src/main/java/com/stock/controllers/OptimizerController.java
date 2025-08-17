@@ -15,9 +15,6 @@ import com.stock.data.SymbolStatusDto;
 import com.stock.services.SymbolService;
 
 @RestController
-//@CrossOrigin("*")
-//@CrossOrigin(origins = "*")
-//@CrossOrigin(origins = "http://localhost:5003")
 @RequestMapping("/api")
 public class OptimizerController {
 	
@@ -40,5 +37,4 @@ public class OptimizerController {
 	List<String> exchanges = Arrays.asList("NYSE","NASDAQ");
 	return symbolService.getSymbolStatusList(exchanges);
   }
-    
 }

@@ -53,6 +53,8 @@ public class SymbolServiceImpl implements SymbolService {
 	@Override
 	public List<SymbolStatusDto> getSymbolStatusList(List<String> exchanges) {
 
+		log.info("[SymbolServiceImpl.getSymbolStatusList] : #100 exchanges = " + exchanges.toString() );
+		
 		//Getting watch symbol list for TSX
 		Set<WatchSymbol> watchSymbols = watchSymbolRepository.findByExchangeIn(exchanges);
 		
@@ -161,8 +163,5 @@ public class SymbolServiceImpl implements SymbolService {
 				.map(WatchSymbol::getSymbol)
 				.filter(symbol -> symbol != null && !symbol.isBlank())
 				.collect(Collectors.toSet());
-	}
-
-	
-	
+	}	
 }

@@ -71,8 +71,8 @@ public class SecurityConfig {
 	private final RSAKeyRecord rsaKeyRecord;
 	private final JwtTokenUtils jwtTokenUtils;
 	private final CookieService cookieService;
-
-	private final JwtAccessTokenFilter jwtAccessTokenFilter;
+	
+	private JwtAccessTokenFilter jwtAccessTokenFilter;
 
 	public SecurityConfig(UserInfoManagerConfig userInfoManagerConfig, RSAKeyRecord rsaKeyRecord,
 			JwtTokenUtils jwtTokenUtils, CookieService cookieService, JwtAccessTokenFilter jwtAccessTokenFilter,
@@ -96,25 +96,6 @@ public class SecurityConfig {
 	 * @return
 	 * @throws Exception
 	 */
-//	@Order(1)
-//    @Bean
-//    public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
-//        return httpSecurity
-//        		.csrf(AbstractHttpConfigurer::disable)
-//                .securityMatcher("/sign-in")
-//                .authorizeHttpRequests(auth -> auth
-//            		.requestMatchers("/sign-in").permitAll()
-////            		.requestMatchers(HttpMethod.GET, "/login").permitAll()
-//                )
-//                .userDetailsService(userInfoManagerConfig)
-//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-////                .httpBasic(Customizer.withDefaults())
-//                .httpBasic(httpBasic -> httpBasic
-//                        .authenticationEntryPoint(noPopupBasicAuthenticationEntryPoint()) // suppress pop-up
-//                )
-//                .build();
-//    }
-	
 	@Order(1)
 	@Bean
 	public SecurityFilterChain signInSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
@@ -132,24 +113,7 @@ public class SecurityConfig {
 				.build();
 	}
 
-//	@Order(1)
-//	@Bean
-//	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-//	    return httpSecurity
-//	            .csrf(AbstractHttpConfigurer::disable)
-//	            .authorizeHttpRequests(auth -> auth
-//	                .requestMatchers("/sign-in").permitAll()
-//	                .anyRequest().authenticated()
-//	            )
-//	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//	            .httpBasic(httpBasic -> 
-//	                httpBasic.authenticationEntryPoint(noPopupBasicAuthenticationEntryPoint())
-//	            )
-//	            .build();
-//	}
 
-	
-	
 	/**
 	 * This class is to suppress  The authentication pop-up is caused by the response header WWW-Authenticate: Basic, 
 	 * which is set by BasicAuthenticationEntryPoint.
@@ -184,14 +148,16 @@ public class SecurityConfig {
 	    return http
 	        .securityMatcher("/api/**")
 	        .csrf(AbstractHttpConfigurer::disable)
+	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // <--- important
 	        .authorizeHttpRequests(auth -> auth
-	            .requestMatchers(HttpMethod.GET, "/api/ca-buy-list", "/api/us-buy-list", "/api/portfolios/**", "/api/portfolio-trades/*", "/api/money-transfers/**").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
-	            .requestMatchers(HttpMethod.POST,  "/api/portfolios", "/api/portfolios/**", "/api/portfolio-trade/**", "/api/money-transfers/**").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
-	            .requestMatchers(HttpMethod.PUT, "/api/portfolios").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
-	            .requestMatchers(HttpMethod.DELETE, "/api/portfolios/*", "/api/money-transfers/**").hasAnyAuthority("SCOPE_WRITE", "ROLE_USER")
+	            .requestMatchers(HttpMethod.GET, "/api/ca-buy-list", "/api/us-buy-list", "/api/portfolios/**").hasAnyAuthority("ROLE_USER")
+	            .requestMatchers(HttpMethod.POST,  "/api/portfolios", "/api/portfolios/**", "/api/portfolio-trade/**").hasAnyAuthority("ROLE_USER")
+	            .requestMatchers(HttpMethod.PUT, "/api/portfolios").hasAnyAuthority("ROLE_USER")
+	            .requestMatchers(HttpMethod.DELETE, "/api/portfolios/*").hasAnyAuthority("ROLE_USER")
 	            .anyRequest().authenticated()
 	        )
-	        .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+//	        .addFilterBefore(new JwtAccessTokenFilter(rsaKeyRecord, jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
+	        .addFilterBefore(jwtAccessTokenFilter, UsernamePasswordAuthenticationFilter.class)
 	        .exceptionHandling(ex -> {
 	            ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint());
 	            ex.accessDeniedHandler(new BearerTokenAccessDeniedHandler());

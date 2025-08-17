@@ -19,7 +19,10 @@ public class CorsConfig {
 	 public CorsFilter corsFilter() {
 
        CorsConfiguration config = new CorsConfiguration();
-       config.setAllowedOrigins(Arrays.asList("https://localhost:5004","http://localhost:5004","http://localhost:8440","http://localhost:9080","https://localhost:9443"));
+       
+//       config.setAllowedOrigins(Arrays.asList("https://localhost:5004","http://localhost:5004","http://localhost:8440","http://localhost:9080","https://localhost:9443"));
+       
+       config.addAllowedOriginPattern("*");
        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
        config.setAllowCredentials(true);

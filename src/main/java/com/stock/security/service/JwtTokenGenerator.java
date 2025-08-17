@@ -41,10 +41,10 @@ public class JwtTokenGenerator {
         String roles = getRolesOfUser(authentication);
         log.info("#1 ROLES TP GENERATE TOKEN: " + roles);
         
-        String permissions = getPermissionsFromRoles(roles);
-
+//        String permissions = getPermissionsFromRoles(roles);
+        String permissions = "ROLE_USER";
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("iwm5")
+                .issuer("iwm7")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plus(10, ChronoUnit.HOURS))  // Instant.now().plus(3, ChronoUnit.HOURS)
                 .subject(authentication.getName())
@@ -64,17 +64,18 @@ public class JwtTokenGenerator {
 
         log.info("[JwtTokenGenerator:generateAccessToken] Token Creation Started for:{}", userEmail);
 
-        String roles = "READ";
+        String roles = "ROLE_USER";
         log.info("#1 ROLES TP GENERATE TOKEN: " + roles);
         
-        String permissions = getPermissionsFromRoles(roles);
-
+//        String permissions = getPermissionsFromRoles(roles);
+        String permissions = "ROLE_USER";
+        
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("iwm5")
+                .issuer("iwm7")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plus(3, ChronoUnit.DAYS))  // Instant.now().plus(3, ChronoUnit.HOURS)
                 .subject(userEmail)
-                .claim("scope", permissions)
+                .claim("authorities", List.of("ROLE_USER"))
                 .build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
@@ -91,11 +92,11 @@ public class JwtTokenGenerator {
         log.info("[JwtTokenGenerator:generateRefreshToken] Token Creation Started for:{}", authentication.getName());
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("iwm5")
+                .issuer("iwm7")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plus(15, ChronoUnit.DAYS))
                 .subject(authentication.getName())
-                .claim("scope", "REFRESH_TOKEN")
+                .claim("authorities", List.of("ROLE_USER"))
                 .build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
@@ -114,11 +115,11 @@ public class JwtTokenGenerator {
         log.info("[JwtTokenGenerator:generateRefreshToken] Token Creation Started for signup:{}", username);
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("iwm5")
+                .issuer("iwm7")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plus(15, ChronoUnit.DAYS))
                 .subject(username)
-                .claim("scope", "REFRESH_TOKEN")
+                .claim("authorities", List.of("ROLE_USER"))
                 .build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
@@ -151,14 +152,14 @@ public class JwtTokenGenerator {
     private String getPermissionsFromRoles(String roles) {
         Set<String> permissions = new HashSet<>();
 
-        if (roles.contains("ROLE_PAIDCA")) {
+        if (roles.contains("ROLE_USER")) {
             permissions.addAll(List.of("READ", "WRITE", "DELETE", "MESSAGE"));
         }
-        if (roles.contains("ROLE_PAIDUS")) {
+        if (roles.contains("ROLE_GUEST")) {
             permissions.add("READ");
         }
-        if (roles.contains("ROLE_USER")) {
-            permissions.add("READ");
+        if (roles.contains("ROLE_ADMIN")) {
+        	permissions.addAll(List.of("READ", "WRITE", "DELETE", "MESSAGE"));
         }
         return String.join(" ", permissions);
     }

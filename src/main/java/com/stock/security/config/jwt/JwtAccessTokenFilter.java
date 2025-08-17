@@ -3,7 +3,6 @@ package com.stock.security.config.jwt;
 import java.io.IOException;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,14 +14,11 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.stock.security.config.RSAKeyRecord;
-import com.stock.security.dto.TokenType;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -63,7 +59,17 @@ public class JwtAccessTokenFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
     	
     	log.info("[JwtAccessTokenFilter] #0 Request received: {}", request.getRequestURI());
-    	log.info("[JwtAccessTokenFilter:doFilterInternal] :: #1 Started ");
+    	log.info("[JwtAccessTokenFilter:doFilterInternal] : #1 Started ");
+    	
+    	
+    	// Skip OPTIONS requests (CORS pre-flight)
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+    	
+    	
+    	log.info("[JwtAccessTokenFilter:doFilterInternal] #1-1 Authorization header: {}", request.getHeader(HttpHeaders.AUTHORIZATION));
     	
     	// Get request URI
         String requestURI = request.getRequestURI();
@@ -84,10 +90,10 @@ public class JwtAccessTokenFilter extends OncePerRequestFilter {
     	
         try{
             log.info("[JwtAccessTokenFilter:doFilterInternal] :: #2 Started ");
-            log.info("[JwtAccessTokenFilter:doFilterInternal] #3 Filtering the Http Request:{}",request.getRequestURI());
+            log.info("[JwtAccessTokenFilter:doFilterInternal] #3 Filtering the Http Request:{}", request.getRequestURI());
 
             final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-
+            
             JwtDecoder jwtDecoder =  NimbusJwtDecoder.withPublicKey(rsaKeyRecord.rsaPublicKey()).build();
 
 //            if(!authHeader.startsWith(TokenType.Bearer.name())){
@@ -107,20 +113,35 @@ public class JwtAccessTokenFilter extends OncePerRequestFilter {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Missing or invalid token");
                 return;
             }
-
             
             final String token = authHeader.substring(7);
-            final Jwt jwtToken = jwtDecoder.decode(token);
-
+            Jwt jwtToken;
+            try {
+                jwtToken = jwtDecoder.decode(token);
+                log.info("[JwtAccessTokenFilter] JWT decoded successfully. Claims: {}", jwtToken.getClaims());
+            } catch (JwtValidationException e) {
+                log.error("[JwtAccessTokenFilter] JWT decoding failed: {}", e.getMessage(), e);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Invalid token");
+                return;
+            }
+            
             final String userName = jwtTokenUtils.getUserName(jwtToken);
-            log.info("[JwtAccessTokenFilter.doFilterInternal] => token: " + token);
+            
+            log.info("[JwtAccessTokenFilter.doFilterInternal] #5 => token: " + token);
+            
+            log.info("[JwtAccessTokenFilter.doFilterInternal] #5-1 => userName: " + userName);
+            log.info("[JwtAccessTokenFilter.doFilterInternal] #5-2 => SecurityContextHolder.getContext().getAuthentication(): " + SecurityContextHolder.getContext().getAuthentication());
 
             if(!userName.isEmpty() && SecurityContextHolder.getContext().getAuthentication() == null){
 
+            	log.info("[JwtAccessTokenFilter.doFilterInternal] #6 => userName: " + userName);
+            	
                 UserDetails userDetails = jwtTokenUtils.userDetails(userName);
                 
                 if(jwtTokenUtils.isTokenValid(jwtToken,userDetails)){
                 
+                	log.info("[JwtAccessTokenFilter.doFilterInternal] #7 => userDetails: " + userDetails.getUsername()); 
+                	
                 	SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
 
                     UsernamePasswordAuthenticationToken createdToken = new UsernamePasswordAuthenticationToken(
@@ -128,13 +149,20 @@ public class JwtAccessTokenFilter extends OncePerRequestFilter {
                             null,
                             userDetails.getAuthorities()
                     );
+                    
+                    log.info("[JwtAccessTokenFilter.doFilterInternal] #8 => createdToken: " + createdToken.getName()); 
+                    
                     createdToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     securityContext.setAuthentication(createdToken);
                     SecurityContextHolder.setContext(securityContext);
                 }
+                
+                log.info("[JwtAccessTokenFilter.doFilterInternal] #9 => securityContext END"); 
             }
-            log.info("[JwtAccessTokenFilter:doFilterInternal] Completed");
-            filterChain.doFilter(request,response);
+            
+            log.info("[JwtAccessTokenFilter:doFilterInternal] #10 Completed");
+        
+            filterChain.doFilter(request, response);
             
         } catch (JwtValidationException jwtValidationException) {
             log.error("[JwtAccessTokenFilter:doFilterInternal] JWT Validation Failed: {}", jwtValidationException.getMessage());

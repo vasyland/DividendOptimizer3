@@ -14,8 +14,8 @@ spring:
     name: DividendOptimizer3
 
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/iwm?userSSL=false
-    username: iwmapp
+    url: jdbc:mysql://host.docker.internal:3306/golem?useSSL=false&serverTimezone=UTC
+    username: root
     password: sea4me
     driver-class-name: com.mysql.cj.jdbc.Driver
 
@@ -28,7 +28,6 @@ spring:
       minimum-idle: 2
 
   jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
     show-sql: true
     hibernate:
       ddl-auto: none
@@ -44,17 +43,8 @@ spring:
       cors: https://localhost:5004
 
 logging:
-  file:
-    name: logs/dividend-optimizer.log
-  logback:
-    rolling-policy:
-      max-file-size: 10MB         # Rotate when file exceeds 10MB
-      max-history: 7              # Keep up to 7 archived files
-      total-size-cap: 100MB       # Total size limit of archived files
-      file-name-pattern: logs/archived/dividend-optimizer-%d{yyyy-MM-dd}.%i.gz  # Pattern for archived logs
   level:
     org.springframework.security: debug
-    org.springframework.security.oauth2: DEBUG
 
 rsa:
   rsa-private-key: classpath:certificates/private.pem

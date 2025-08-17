@@ -163,6 +163,7 @@ public class AuthService {
 		 */
 		public AuthResponseDto getJwtTokensAfterAuthentication(Authentication authentication, 
 		        HttpServletResponse response) {
+			
 		    log.info("#09 AuthResponseDto getJwtTokensAfterAuthentication: " + authentication.getName());
 		    
 		    try {

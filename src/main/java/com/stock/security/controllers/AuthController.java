@@ -58,7 +58,7 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegistrationDto userRegistrationDto,
                                           BindingResult bindingResult, HttpServletResponse response){
 
-        log.info("[AuthController:registerUser]Signup Process Started for user:{}",userRegistrationDto.userName());
+        log.info("[AuthController:registerUser] Signup Process Started for user:{}",userRegistrationDto.userName());
 
         if (bindingResult.hasErrors()) {
             List<String> errorMessage = bindingResult.getAllErrors().stream()
