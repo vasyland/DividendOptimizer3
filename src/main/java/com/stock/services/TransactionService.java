@@ -365,9 +365,31 @@ public class TransactionService {
 		return fmpCurrentPriceRepository.findBySymbolIn(symbols);
 	}
 	
-	
+	/**
+	 * TODO: Security
+	 * @param portfolioId
+	 * @return
+	 */
 	public List<TransactionDto> getTransactionDtos(Long portfolioId) {
 		
+		// Check if a portfolio exists for the current user
+    	String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+    	log.info("[TransactionService:getTransactionDtos] #1 Current Username: {}", currentUsername);
+	
+		
+		// Get the user ID from the current user
+    	Long currentUserId = userService.getCurrentUserId();
+    	log.info("[TransactionService:getTransactionDtos] #2 Current User ID: {}", currentUserId);
+		
+    	Optional<Portfolio> portfolioOptional = portfolioRepository.findById(portfolioId);
+    	
+    	Long portfolioUserId = portfolioOptional.get().getUser().getId();
+    	
+    	if (portfolioUserId != currentUserId || portfolioOptional.isEmpty()) {
+        	throw new IllegalArgumentException("#3 Portfolio not found or does not belong to this user.");
+        }
+    	
+    	
 		List<Transaction> transactions = transactionRepository.findByPortfolioId(portfolioId);
 		if (transactions == null || transactions.isEmpty()) {
 			return List.of();
