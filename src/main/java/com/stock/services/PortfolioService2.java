@@ -90,11 +90,23 @@ public class PortfolioService2 {
 		BigDecimal combinedBookCost = BigDecimal.valueOf(0);
 		BigDecimal combinedTotal = BigDecimal.valueOf(0);  // BookCost + Cash
 		BigDecimal totalMarketValue = BigDecimal.valueOf(0);
+		BigDecimal totalUnrealizedPnL = BigDecimal.valueOf(0);
 		
 		
 		List<Transaction> transactions = transactionRepository.findByPortfolioId(portfolioId);
 		log.info("#2 [PortfolioService2:getPortfolioStatusFromTransactions] Number of Transactions = " + transactions.size());
 		
+		// Portfolio doesn't have any transaction
+		if(transactions.size() == 0) {
+			summary.setId(portfolio.getId());
+			summary.setName(portfolio.getName());
+			summary.setCombinedBookCost(BigDecimal.valueOf(0));
+			summary.setCash(portfolio.getInitialAmount());
+			summary.setCombinedTotal(portfolio.getInitialAmount());
+			summary.setTotalMarketValue(portfolio.getInitialAmount());
+			summary.setTotalUnrealizedPnL(BigDecimal.valueOf(0));
+			return summary;
+		}
 		
 		var holdingList = new ArrayList<HoldingDto>();
 		
@@ -178,6 +190,7 @@ public class PortfolioService2 {
 	    	log.info(h.getSymbol() + " | " + h.getShares() + " | " + h.getAvgCostPerShare() + " | " + h.getBookCost());
 	    }
 	    
+	    log.info("==================== Processing Holdings =======================");
 	    // Get current prices for each symbol
 	    var currentPrices = fmpCurrentPriceRepository.findBySymbolIn(holdingSymbols);
 		for (FmpCurrentPriceProjection p : currentPrices) {
@@ -190,12 +203,19 @@ public class PortfolioService2 {
 		for (HoldingDto h : holdingList) {
 			
 			BigDecimal marketValue = BigDecimal.ZERO;
+			BigDecimal unrealizedPnL = BigDecimal.ZERO;
+			
             // Find current price for the symbol
 			for (FmpCurrentPriceProjection p : currentPrices) {
 				if (h.getSymbol().equalsIgnoreCase(p.getSymbol())) {
 					marketValue = p.getPrice().multiply(BigDecimal.valueOf(h.getShares()));
+					unrealizedPnL = p.getPrice().subtract(h.getAvgCostPerShare()).multiply(BigDecimal.valueOf(h.getShares()));
+					
 					h.setMarketValue(marketValue.setScale(2, RoundingMode.HALF_UP));
+					h.setUnrealizedPnL(unrealizedPnL.setScale(2, RoundingMode.HALF_UP));
 					totalMarketValue = totalMarketValue.add(marketValue);
+					totalUnrealizedPnL = totalUnrealizedPnL.add(unrealizedPnL);
+					
 					log.info("#5 " +  h.getSymbol() + " Current Price = " + p.getPrice() + " | Market Value = " + marketValue);
 					break;
 				}
@@ -217,6 +237,7 @@ public class PortfolioService2 {
 		summary.setCombinedBookCost(combinedBookCost.setScale(2, RoundingMode.HALF_UP));
 		summary.setCombinedTotal(combinedTotal.setScale(2, RoundingMode.HALF_UP));
 		summary.setTotalMarketValue(totalMarketValue.setScale(2, RoundingMode.HALF_UP));
+		summary.setTotalUnrealizedPnL(totalUnrealizedPnL.setScale(2, RoundingMode.HALF_UP));
 		summary.setCash(cash.setScale(2, RoundingMode.HALF_UP));
 		summary.setNumberOfHoldings(holdingList.size());
 		summary.setNumberOfTransactions(transactions.size());

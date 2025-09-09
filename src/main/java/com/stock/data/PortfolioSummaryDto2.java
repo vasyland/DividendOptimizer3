@@ -12,9 +12,9 @@ public class PortfolioSummaryDto2 {
     private BigDecimal combinedBookCost;
     private BigDecimal combinedTotal;
     private BigDecimal totalMarketValue;
+    private BigDecimal totalUnrealizedPnL;
     private int numberOfTransactions;
     private int numberOfHoldings;
-    
     private LocalDateTime updatedAt;
     
 	
@@ -82,4 +82,13 @@ public class PortfolioSummaryDto2 {
 	public void setNumberOfTransactions(int numberOfTransactions) {
 		this.numberOfTransactions = numberOfTransactions;
 	}
+	public BigDecimal getTotalUnrealizedPnL() {
+		return totalUnrealizedPnL;
+	}
+	public void setTotalUnrealizedPnL(BigDecimal totalUnrealizedPnL) {
+		this.totalUnrealizedPnL = totalUnrealizedPnL;
+	}
+	
+	
+	
 }
