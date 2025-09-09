@@ -3,54 +3,49 @@ package com.stock.model;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class PortfolioUpdateRequest {
 
+	@JsonProperty("id")
 	private Long id;
+	@JsonProperty("name")
 	private String name;
-	private BigDecimal initialCash;
-	private BigDecimal currentCash;
+	@JsonProperty("initialAmount")
+	private BigDecimal initialAmount;
 	
 	public PortfolioUpdateRequest() {
 		super();
 	}
 
-	public PortfolioUpdateRequest(Long id, String name, BigDecimal initialCash, BigDecimal currentCash) {
+	public PortfolioUpdateRequest(Long id, String name, BigDecimal initialAmount) {
 		super();
 		this.id = id;
 		this.name = name;
-		this.initialCash = initialCash;
-		this.currentCash = currentCash;
+		this.initialAmount = initialAmount;
 	}
+
 	public Long getId() {
 		return id;
 	}
+
 	public void setId(Long id) {
 		this.id = id;
 	}
+
 	public String getName() {
 		return name;
 	}
+
 	public void setName(String name) {
 		this.name = name;
 	}
-	public BigDecimal getInitialCash() {
-		return initialCash;
+
+	public BigDecimal getInitialAmount() {
+		return initialAmount;
 	}
-	public void setInitialCash(BigDecimal initialCash) {
-		this.initialCash = initialCash;
+
+	public void setInitialAmount(BigDecimal initialAmount) {
+		this.initialAmount = initialAmount;
 	}
-	public BigDecimal getCurrentCash() {
-		return currentCash;
-	}
-	public void setCurrentCash(BigDecimal currentCash) {
-		this.currentCash = currentCash;
-	}
-	@Override
-	public String toString() {
-		return "PortfolioUpdateRequest [id=" + id + ", name=" + name + ", initialCash=" + initialCash + ", currentCash="
-				+ currentCash + "]";
-	}
-	
-	
-	
 }

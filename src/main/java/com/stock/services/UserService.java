@@ -3,7 +3,6 @@ package com.stock.services;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.UserSubscriptionRepository;
 import com.stock.security.entity.UserInfo;
 import com.stock.security.entity.UserSubscription;

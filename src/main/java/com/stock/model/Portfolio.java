@@ -27,25 +27,14 @@ public class Portfolio {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "initial_cash", nullable = false, precision = 15, scale = 2)
-    private BigDecimal initialCash;
-
-    @Column(name = "current_cash", nullable = false, precision = 15, scale = 2)
-    private BigDecimal currentCash;    
-    
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
+    @Column(name = "initial_amount", nullable = false, precision = 15, scale = 2)
+    private BigDecimal initialAmount;
+   
     @Column(name = "updated_at")
     @JsonIgnore
     private LocalDateTime updatedAt;
-
+ 
     @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
@@ -75,28 +64,12 @@ public class Portfolio {
 		this.name = name;
 	}
 
-	public BigDecimal getInitialCash() {
-		return initialCash;
+	public BigDecimal getInitialAmount() {
+		return initialAmount;
 	}
 
-	public void setInitialCash(BigDecimal initialCash) {
-		this.initialCash = initialCash;
-	}
-
-	public BigDecimal getCurrentCash() {
-		return currentCash;
-	}
-
-	public void setCurrentCash(BigDecimal currentCash) {
-		this.currentCash = currentCash;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
+	public void setInitialAmount(BigDecimal initialAmount) {
+		this.initialAmount = initialAmount;
 	}
 
 	public LocalDateTime getUpdatedAt() {
@@ -107,11 +80,5 @@ public class Portfolio {
 		this.updatedAt = updatedAt;
 	}
 
-	@Override
-	public String toString() {
-		return "Portfolio [id=" + id + ", user=" + user + ", name=" + name + ", initialCash=" + initialCash
-				+ ", currentCash=" + currentCash + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
-	}
-    
-    
+
 }

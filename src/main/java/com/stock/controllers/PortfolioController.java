@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,17 +19,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.stock.data.HoldingDto;
-import com.stock.data.PortfolioSummaryDTO;
+import com.stock.data.HoldingDto2;
+import com.stock.data.PortfolioSummaryDto2;
 import com.stock.model.Portfolio;
 import com.stock.model.PortfolioCreateRequest;
-import com.stock.model.PortfolioDto;
 import com.stock.model.PortfolioUpdateRequest;
+import com.stock.services.HoldingService2;
 import com.stock.services.HoldingsService;
 import com.stock.services.PortfolioService;
-import com.stock.services.PortfolioSummaryService;
+import com.stock.services.PortfolioService2;
+import com.stock.services.UserService;
 
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 
 @CrossOrigin(origins = "https://localhost:5004")
 @RestController
@@ -39,16 +41,19 @@ public class PortfolioController {
 
     private final PortfolioService portfolioService;
     private final HoldingsService holdingsService;
-    private final PortfolioSummaryService portfolioSummaryService;
-    
-    
-    
-    public PortfolioController(PortfolioService portfolioService, HoldingsService holdingsService,
-			PortfolioSummaryService portfolioSummaryService) {
+    private final HoldingService2 holdingService2;
+    private final UserService userService;
+    private final PortfolioService2 portfolioService2;
+
+	
+	public PortfolioController(PortfolioService portfolioService, HoldingsService holdingsService,
+			HoldingService2 holdingService2, UserService userService, PortfolioService2 portfolioService2) {
 		super();
 		this.portfolioService = portfolioService;
 		this.holdingsService = holdingsService;
-		this.portfolioSummaryService = portfolioSummaryService;
+		this.holdingService2 = holdingService2;
+		this.userService = userService;
+		this.portfolioService2 = portfolioService2;
 	}
 
 
@@ -60,53 +65,50 @@ public class PortfolioController {
     @CrossOrigin(origins = "https://localhost:5004")
     @PostMapping
     public ResponseEntity<?> createPortfolio(
-    		@RequestBody PortfolioCreateRequest portfolioRequest,
-    		BindingResult bindingResult, 
-    		HttpServletResponse response) {
-        
-    	log.info("[PortfolioController:createPortfolio] New Portfolio: {}",portfolioRequest.getName());
-    	
-    	 if (bindingResult.hasErrors()) {
-             List<String> errorMessage = bindingResult.getAllErrors().stream()
-                     .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                     .toList();
-             log.error("[PortfolioController:createPortfolio]Errors in the portfolio:{}", errorMessage);
-             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-         }
-    	
-    	// PortfolioService now handles portfolio creation with the data in the request body
+            @Valid @RequestBody PortfolioCreateRequest portfolioRequest,
+            BindingResult bindingResult) {
+
+        log.info("[PortfolioController:createPortfolio] New Portfolio: {}", portfolioRequest.getName());
+
+        if (bindingResult.hasErrors()) {
+            List<String> errorMessage = bindingResult.getAllErrors().stream()
+                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                    .toList();
+            log.error("[PortfolioController:createPortfolio] Errors in the portfolio: {}", errorMessage);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
+        }
+
         Portfolio portfolio = portfolioService.createPortfolio(
-                portfolioRequest.getName(), 
-                portfolioRequest.getInitialCash(),
-                portfolioRequest.getCurrentCash()
-                );
-      
+                portfolioRequest.getName(),
+                portfolioRequest.getInitialAmount()
+        );
+
         return new ResponseEntity<>(portfolio, HttpStatus.CREATED);
-//        return ResponseEntity.ok(portfolio);
     }
        
-    
-//    @CrossOrigin(origins = "https://localhost:5004")
-//    @GetMapping("/{userId}")
-//    public ResponseEntity<List<Portfolio>> getUserPortfoliosOriginal(@PathVariable("userId") Long userId) {
-//        List<Portfolio> portfolios = portfolioService.getUserPortfolios(userId);
-//        return new ResponseEntity<>(portfolios, HttpStatus.OK);
-//    }
-    
+      
 	/**
 	 * Get all Portfolios for the user This method returns PortfolioDto objects
 	 * instead of Portfolio entities to avoid exposing sensitive data.
 	 * 
-	 * @param userId
 	 * @return List of PortfolioDto
 	 */
     @CrossOrigin(origins = "https://localhost:5004")
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<PortfolioDto>> getUserPortfolios(@PathVariable("userId") Long userId) {
-        List<PortfolioDto> portfolios = portfolioSummaryService.getUserPortfoliosData(userId);
+    @GetMapping("/user")
+    public ResponseEntity<List<PortfolioSummaryDto2>> getUserPortfoliosData2(Authentication authentication) {
+    	
+    	// 1. Extract email from JWT (sub claim)
+        String email = authentication.getName(); // by default, Spring maps "sub" to getName()
+        log.info("[PortfolioController.getUserPortfolios] Email from Authentication token: " + email);
+        
+        Long userId = userService.getCurrentUserId();
+        log.info("[PortfolioController.getUserPortfoliosA] Authentication User Id: " + userId);
+        
+        List<PortfolioSummaryDto2> portfolios = portfolioService2.getUserPortfoliosData(userId);
         return new ResponseEntity<>(portfolios, HttpStatus.OK);
-    }
-
+    }   
+    
+    
     /**
      * Edit an existing portfolio for the user (portfolioId is in the body)
      * @param request with new data
@@ -118,7 +120,11 @@ public class PortfolioController {
     public ResponseEntity<?> editPortfolio(@RequestBody PortfolioUpdateRequest p,
     		BindingResult bindingResult) {
     	
-    	log.info("[PortfolioController:editPortfolio] Portfolio to update: {}",p);
+    	if (p.getId() == null) {
+            throw new IllegalArgumentException("#299 [PortfolioController:editPortfolio]Missing portfolio ID");
+        }
+    	
+    	log.info("#300 [PortfolioController:editPortfolio] Portfolio to update: {}", p.getId());
     
     	if (bindingResult.hasErrors()) {
             List<String> errorMessage = bindingResult.getAllErrors().stream()
@@ -132,8 +138,7 @@ public class PortfolioController {
     	Portfolio updatedPortfolio = portfolioService.editPortfolio(
     			p.getId(),
     			p.getName(), 
-    			p.getInitialCash(),
-    			p.getCurrentCash());  
+    			p.getInitialAmount());  
 
         return ResponseEntity.ok(updatedPortfolio);
     }
@@ -161,26 +166,18 @@ public class PortfolioController {
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
-    @GetMapping("/{portfolioId}/holdings")
-	public ResponseEntity<?> getPortfolioHoldings(@PathVariable("portfolioId") Long portfolioId) {
-		log.info("[PortfolioController:recalculatePortfolioHoldings] Portfolio ID: {}", portfolioId);
-//		List<HoldingPnLDto> holdings = portfolioSummaryService.getPortfolioHoldingsData(portfolioId);
-		// Fetching portfolio holdings using the holdingsService adn updating records in db
-		List<HoldingDto> holdings = holdingsService.getPortfolioHoldings(portfolioId, true);
-		return ResponseEntity.ok(holdings);
-	}    
-    
-    /** Portfolio Summary: calculation of portfolio summary
-     * Genarated by ChatGpt 
-     * */
-    @PutMapping("/{portfolioId}/summary")
-	public ResponseEntity<PortfolioSummaryDTO> getPortfolioSumamry(@PathVariable("portfolioId") Long portfolioId) {
-		log.info("[PortfolioController:getPortfolioSumamry] Portfolio ID: {}", portfolioId);
-		PortfolioSummaryDTO p = portfolioSummaryService.calculatePortfolioSummary(portfolioId);
-		return ResponseEntity.ok(p);
-	}
-    
+//    @GetMapping("/{portfolioId}/holdings")
+//	public ResponseEntity<?> getPortfolioHoldings(@PathVariable("portfolioId") Long portfolioId) {
+//		log.info("[PortfolioController:recalculatePortfolioHoldings] Portfolio ID: {}", portfolioId);
+//		List<HoldingDto> holdings = holdingsService.getPortfolioHoldings(portfolioId, true);
+//		return ResponseEntity.ok(holdings);
+//	}    
     
 
+    @GetMapping("/{portfolioId}/holdings")
+ 	public ResponseEntity<?> getPortfolioHoldings(@PathVariable("portfolioId") Long portfolioId) {
+ 		log.info("[PortfolioController:getPortfolioHoldings] Portfolio ID: {}", portfolioId);
+ 		return ResponseEntity.ok(holdingService2.getHoldingsFromTransactions(portfolioId));
+ 	}  
     
 }

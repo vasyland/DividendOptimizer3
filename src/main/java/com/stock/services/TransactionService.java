@@ -55,9 +55,6 @@ public class TransactionService {
 	private final UserService userService;
 	private final HoldingsService holdingsService;
 	private final FmpCurrentPriceRepository fmpCurrentPriceRepository;
-	private final IncrementalPortfolioSummaryService incrementalPortfolioSummaryService;
-	private final IncrementalHoldingsService incrementalHoldingsService;
-	private final IncrementalPortfolioSummaryUpdater incrementalPortfolioSummaryUpdater;
 
 	public TransactionService(TransactionRepository transactionRepository, 
 			PortfolioRepository portfolioRepository,
@@ -65,9 +62,7 @@ public class TransactionService {
 			UserService userService, 
 			HoldingsService holdingsService,
 			FmpCurrentPriceRepository fmpCurrentPriceRepository,
-			IncrementalPortfolioSummaryService incrementalPortfolioSummaryService,
-			IncrementalHoldingsService incrementalHoldingsService,
-			IncrementalPortfolioSummaryUpdater incrementalPortfolioSummaryUpdater) {
+            IncrementalHoldingsService incrementalHoldingsService) {
 		super();
 		this.transactionRepository = transactionRepository;
 		this.portfolioRepository = portfolioRepository;
@@ -75,9 +70,6 @@ public class TransactionService {
 		this.userService = userService;
 		this.holdingsService = holdingsService;
 		this.fmpCurrentPriceRepository = fmpCurrentPriceRepository;
-		this.incrementalPortfolioSummaryService = incrementalPortfolioSummaryService;
-		this.incrementalHoldingsService = incrementalHoldingsService;
-		this.incrementalPortfolioSummaryUpdater = incrementalPortfolioSummaryUpdater;
 	}
 
 
@@ -184,17 +176,17 @@ public class TransactionService {
     	log.info("[TransactionService:createTransaction] Transaction saved: {}", savedTransaction);
     	
     	// Recalculate holdings for the portfolio using all transactions 
-    	incrementalHoldingsService.applyNewTransaction(savedTransaction);
+//    	incrementalHoldingsService.applyNewTransaction(savedTransaction);
     	
         // Update portfolio cash after summary calculation
 //     	portfolioSummaryService.updatePortfolioCash(tx.getPortfolioId());
-    	PortfolioSummaryDTO psDTO = incrementalPortfolioSummaryService.calculatePortfolioSummary(tx.getPortfolioId());
-    	log.info("[TransactionService:createTransaction] Portfolio summary - getMarketValue(): {}", psDTO.getMarketValue());
-    	log.info("[TransactionService:createTransaction] Portfolio summary - getTotalValue(): {}", psDTO.getTotalValue());
-    	log.info("[TransactionService:createTransaction] Portfolio summary - getUnrealizedPnL(): {}", psDTO.getUnrealizedPnL());
+//    	PortfolioSummaryDTO psDTO = incrementalPortfolioSummaryService.calculatePortfolioSummary(tx.getPortfolioId());
+//    	log.info("[TransactionService:createTransaction] Portfolio summary - getMarketValue(): {}", psDTO.getMarketValue());
+//    	log.info("[TransactionService:createTransaction] Portfolio summary - getTotalValue(): {}", psDTO.getTotalValue());
+//    	log.info("[TransactionService:createTransaction] Portfolio summary - getUnrealizedPnL(): {}", psDTO.getUnrealizedPnL());
      	     	
         // Update portfolio summary after transaction
-     	incrementalPortfolioSummaryUpdater.applyTransaction(savedTransaction);
+//     	incrementalPortfolioSummaryUpdater.applyTransaction(savedTransaction);
         return savedTransaction;
 //        return transactionRepository.save(transaction);
     }

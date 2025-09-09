@@ -159,9 +159,7 @@ CREATE TABLE portfolio (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id         BIGINT NOT NULL,
     name            VARCHAR(100) NOT NULL,  -- Portfolio name
-    initial_cash  DECIMAL(15,2) NOT NULL, -- Initial allocated amount
-    current_cash    DECIMAL(15, 2) DEFAULT 0.00,
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Record creation timestamp
+    initial_amount  DECIMAL(15,2) NOT NULL, -- Initial allocated amount
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Auto-update timestamp
     -- Foreign Key Constraint linking to `user_info`
     CONSTRAINT fk_portfolio_user FOREIGN KEY (user_id) REFERENCES user_info(id) ON DELETE CASCADE
@@ -173,32 +171,18 @@ CREATE TABLE transaction (
     portfolio_id  BIGINT NOT NULL,
     symbol        VARCHAR(10) NOT NULL,
     shares        INT UNSIGNED NOT NULL,
-    price 		  DECIMAL(10,2) NOT NULL,
+    price 		  DECIMAL(12,4) NOT NULL,
     commissions   DECIMAL(5,2) NOT NULL,
     realized_pnl  DECIMAL(15,2),
     currency      VARCHAR(5) NOT NULL,
     transaction_type VARCHAR(5) NOT NULL,
-    transaction_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Record creation timestamp
+    transaction_date   TIMESTAMP,
     note          VARCHAR(120) NOT NULL,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Record creation timestamp
     updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Auto-update timestamp
     -- Foreign Key Constraints
     CONSTRAINT fk_transaction_portfolio FOREIGN KEY (portfolio_id) REFERENCES portfolio(id) ON DELETE CASCADE
 );
-
-
--- Portfolio Summary
-CREATE TABLE portfolio_summary (
-    portfolio_id BIGINT PRIMARY KEY,
-    total_market_value DECIMAL(15, 2),
-    cash DECIMAL(15, 2),
-    total_value DECIMAL(15, 2),
-    realized_pnl DECIMAL(15, 2),
-    unrealized_pnl DECIMAL(15, 2),
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (portfolio_id) REFERENCES portfolio(id) ON DELETE CASCADE
-);
-
 
 -- Holdings
 CREATE TABLE holding (
@@ -219,7 +203,17 @@ CREATE TABLE holding (
 );
 
 
-
+-- Portfolio Summary
+CREATE TABLE portfolio_summary (
+    portfolio_id BIGINT PRIMARY KEY,
+    total_market_value DECIMAL(15, 2),
+    cash DECIMAL(15, 2),
+    total_value DECIMAL(15, 2),
+    realized_pnl DECIMAL(15, 2),
+    unrealized_pnl DECIMAL(15, 2),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (portfolio_id) REFERENCES portfolio(id) ON DELETE CASCADE
+);
 
 drop table money_transfers;
 CREATE TABLE money_transfers (

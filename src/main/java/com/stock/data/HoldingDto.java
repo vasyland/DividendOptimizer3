@@ -14,6 +14,7 @@ public class HoldingDto {
 	private BigDecimal unrealizedPnlPercent;
 	private BigDecimal realizedPnL;
 	private BigDecimal marketValue;
+	private int numberOfTransactions;
 	private String currency;
 	
 	public Long getId() {
@@ -91,6 +92,15 @@ public class HoldingDto {
 
 	public void setUnrealizedPnlPercent(BigDecimal unrealizedPnlPercent) {
 		this.unrealizedPnlPercent = unrealizedPnlPercent;
+	}
+	
+	
+	public int getNumberOfTransactions() {
+		return numberOfTransactions;
+	}
+
+	public void setNumberOfTransactions(int numberOfTransactions) {
+		this.numberOfTransactions = numberOfTransactions;
 	}
 
 	@Override

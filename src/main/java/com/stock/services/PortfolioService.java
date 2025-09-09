@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.stock.exceptions.DuplicatePortfolioException;
 import com.stock.exceptions.UnauthorizedPortfolioAccessException;
 import com.stock.model.Portfolio;
-import com.stock.model.PortfolioSummary;
+
 import com.stock.repositories.HoldingRepository;
 import com.stock.repositories.PortfolioRepository;
 import com.stock.repositories.PortfolioSummaryRepository;
@@ -81,11 +81,11 @@ public PortfolioService(PortfolioRepository portfolioRepository,
     // Create a new portfolio for a user
     @Transactional
     public Portfolio createPortfolio(String name, 
-    		double initialCash, 
-    		double currentCash) {
+    		BigDecimal initialAmount) {
     	
     	String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
     	log.info("[PortfolioService:createPortfolio] Current Username: {}", currentUsername);
+    	
     	// Get the user ID from the current user
     	Long currentUserId = userService.getCurrentUserId();
     	log.info("[PortfolioService:editPortfolio] Current User ID: {}", currentUserId);
@@ -104,23 +104,9 @@ public PortfolioService(PortfolioRepository portfolioRepository,
         Portfolio portfolio = new Portfolio();
         portfolio. setUser(user);
         portfolio.setName(name);
-        portfolio.setInitialCash(new BigDecimal(initialCash));
-        portfolio.setCurrentCash(new BigDecimal(currentCash));
+        portfolio.setInitialAmount(initialAmount);
         
         Portfolio savedPortfolio = portfolioRepository.save(portfolio); // generates ID
-        
-     // Create corresponding PortfolioSummary
-        PortfolioSummary summary = new PortfolioSummary();
-        summary.setPortfolio(savedPortfolio);
-//        summary.setPortfolioId(savedPortfolio.getId());
-        summary.setCash(BigDecimal.valueOf(currentCash)); // Start with currentCash
-        summary.setRealizedPnL(BigDecimal.ZERO);
-        summary.setUnrealizedPnL(BigDecimal.ZERO);
-        summary.setTotalMarketValue(BigDecimal.ZERO);
-        summary.setTotalValue(BigDecimal.valueOf(currentCash)); // Initial total value
-        summary.setUpdatedAt(LocalDateTime.now());
-
-        portfolioSummaryRepository.save(summary);
         
         return savedPortfolio;
     }
@@ -129,10 +115,11 @@ public PortfolioService(PortfolioRepository portfolioRepository,
     // Edit an existing portfolio for a user
     @Transactional
     public Portfolio editPortfolio(
-    		Long portfolioId, 
+    		Long id, 
     		String name, 
-    		BigDecimal initialCash,
-    		BigDecimal currentCash) {
+    		BigDecimal initialAmount) {
+    	
+    	log.info("#100 [PortfolioService:editPortfolio] Current portfolio id = " + id);
     	
     	String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
     	log.info("[PortfolioService:editPortfolio] Current Username: {}", currentUsername);
@@ -141,7 +128,7 @@ public PortfolioService(PortfolioRepository portfolioRepository,
     	Long currentUserId = userService.getCurrentUserId();
     	log.info("[PortfolioService:editPortfolio] Current User ID: {}", currentUserId);
     	
-        Optional<Portfolio> existingPortfolio = portfolioRepository.findById(portfolioId);
+        Optional<Portfolio> existingPortfolio = portfolioRepository.findById(id);
         Long portfolioUserId = existingPortfolio.get().getUser().getId();
         log.info("[PortfolioService:editPortfolio] Portfolio User ID: {}", portfolioUserId);
 
@@ -154,9 +141,9 @@ public PortfolioService(PortfolioRepository portfolioRepository,
         }
 
         Portfolio portfolio = existingPortfolio.get();
+        portfolio.setId(id);
         portfolio.setName(name);
-        portfolio.setInitialCash(initialCash);
-        portfolio.setCurrentCash(currentCash);
+        portfolio.setInitialAmount(initialAmount);
 
         return portfolioRepository.save(portfolio);
     }

@@ -36,20 +36,20 @@ public class FreePointsController {
 	private final SymbolService symbolService;
 	private final FeatureService featureService;
 	private final ListedCompanyService listedCompanyService;
-	private final CompanyPriceService service;
+	private final CompanyPriceService companyPriceService;
 
 	
 	public FreePointsController(SymbolService symbolService, FeatureService featureService,
-			ListedCompanyService listedCompanyService, CompanyPriceService service) {
+			ListedCompanyService listedCompanyService, CompanyPriceService companyPriceService) {
 		this.symbolService = symbolService;
 		this.featureService = featureService;
 		this.listedCompanyService = listedCompanyService;
-		this.service = service;
+		this.companyPriceService = companyPriceService;
 	}
 
 	@GetMapping("/company-prices")
     public List<CompanyPriceProjection> getLatestCompanyPrices() {
-        return service.getLatestPrices();
+        return companyPriceService.getLatestPrices();
     }
 	
 	@GetMapping("/all-companies")
