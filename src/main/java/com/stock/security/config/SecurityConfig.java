@@ -150,7 +150,7 @@ public class SecurityConfig {
 	        .csrf(AbstractHttpConfigurer::disable)
 	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // <--- important
 	        .authorizeHttpRequests(auth -> auth
-	            .requestMatchers(HttpMethod.GET, "/api/ca-buy-list", "/api/us-buy-list", "/api/portfolios/**").hasAnyAuthority("ROLE_USER")
+	            .requestMatchers(HttpMethod.GET, "/api/ca-buy-list", "/api/us-buy-list", "/api/portfolios/**", "/api/weather/**").hasAnyAuthority("ROLE_USER")
 	            .requestMatchers(HttpMethod.POST,  "/api/portfolios", "/api/portfolios/**", "/api/portfolio-trade/**").hasAnyAuthority("ROLE_USER")
 	            .requestMatchers(HttpMethod.PUT, "/api/portfolios").hasAnyAuthority("ROLE_USER")
 	            .requestMatchers(HttpMethod.DELETE, "/api/portfolios/*").hasAnyAuthority("ROLE_USER")
