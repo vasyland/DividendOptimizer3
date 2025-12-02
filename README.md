@@ -22,9 +22,6 @@ July 10, 2024: branch J10-Security - fixed issues with secrurity configurations
 docker run --rm -it --network host mysql:8 mysql -h host.docker.internal -P 3306 -u root -p
 
 
-
-
-
 ###Tables used by application
 ```
 1. user_info, user_info_seq - user information, encrypted passwords, and role.
@@ -134,3 +131,18 @@ but it looks like the link is broken. Check it later.
 
 # Test changes
 
+
+## Db Configurations
+```
+  datasource:
+    url: jdbc:mysql://localhost:3306/golem
+    username: root
+    password: sea4me
+    driver-class-name: com.mysql.cj.jdbc.Drive
+    
+#remote:
+#  datasource:
+#  jdbcUrl: jdbc:mysql://167.99.187.155:3306/iwmdev
+#  username: vasyl
+#  password: M{9}=#n8    
+```

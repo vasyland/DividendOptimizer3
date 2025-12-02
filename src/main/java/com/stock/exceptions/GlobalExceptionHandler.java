@@ -4,11 +4,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import org.springframework.http.ProblemDetail;
+
+import java.net.URI;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestControllerAdvice
-
 public class GlobalExceptionHandler {
 	
 	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
@@ -42,6 +46,17 @@ public class GlobalExceptionHandler {
         log.error("[GlobalExceptionHandler] Holding not found: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
-
+    
+ // ✅ THIS HANDLES "User already exists" (thrown as ResponseStatusException)
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ProblemDetail handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        log.warn("[GlobalExceptionHandler] User registration conflict: {}", ex.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST,
+            ex.getMessage()  // This will be "User already exists"
+        );
+        problem.setTitle("Registration Failed");
+        return problem;
+    }
 }
 

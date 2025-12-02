@@ -17,14 +17,15 @@ public class TransactionCreateRequest {
 
 	public TransactionCreateRequest() {
 	}
-	
-	public TransactionCreateRequest(Long portfolioId, String symbol, Integer shares, BigDecimal price,
-			BigDecimal commissions, String currency, TransactionType transactionType, LocalDateTime transactionDate,
-			String note) {
+		
+	public TransactionCreateRequest(Long portfolioId, String symbol, Integer shares, 
+			BigDecimal price, BigDecimal commissions, String currency, TransactionType transactionType,
+			LocalDateTime transactionDate, String note) {
 		super();
 		this.portfolioId = portfolioId;
 		this.symbol = symbol;
 		this.shares = shares;
+		
 		this.price = price;
 		this.commissions = commissions;
 		this.currency = currency;
@@ -32,6 +33,7 @@ public class TransactionCreateRequest {
 		this.transactionDate = transactionDate;
 		this.note = note;
 	}
+
 	public Long getPortfolioId() {
 		return portfolioId;
 	}
@@ -86,12 +88,12 @@ public class TransactionCreateRequest {
 	public void setNote(String note) {
 		this.note = note;
 	}
+
 	@Override
 	public String toString() {
 		return "TransactionCreateRequest [portfolioId=" + portfolioId + ", symbol=" + symbol + ", shares=" + shares
 				+ ", price=" + price + ", commissions=" + commissions + ", currency=" + currency + ", transactionType="
 				+ transactionType + ", transactionDate=" + transactionDate + ", note=" + note + "]";
 	}
-	
-	
+
 }

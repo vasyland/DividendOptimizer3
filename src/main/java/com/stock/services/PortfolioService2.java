@@ -60,6 +60,7 @@ public class PortfolioService2 {
 
 		// Loop through each portfolio and calculate its summary
 		for (Portfolio p : portfolioList) {
+			
 			log.info("#666 [PortfolioService2:getUserPortfoliosData] Processing Portfolio ID: " + p.getId() + " | Name: " + p.getName());
 			var portfolioSummaryData = this.getPortfolioStatusFromTransactions(p.getId());
 			portfolioSummaryData.setName(p.getName());
@@ -144,6 +145,8 @@ public class PortfolioService2 {
 	    			
 	    		} else if (tx.getTransactionType() == TransactionType.SELL) {
 	
+	    			//Register an average price at the moment of sale and that average price should be kept with transaction
+	    			
 	    			if (totalShares == 0) continue; // skip if nothing to sell
 	    			
 	    			BigDecimal soldValue = BigDecimal.valueOf(shares).multiply(price).subtract(commissions);

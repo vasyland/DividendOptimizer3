@@ -74,14 +74,13 @@ public class JwtAccessTokenFilter extends OncePerRequestFilter {
     	// Get request URI
         String requestURI = request.getRequestURI();
         
+        log.info("[JwtAccessTokenFilter] #1-2 Request URI: {}", requestURI);
+        
     	// Skip JWT filter for refresh token endpoint
         if (requestURI.equals("/sign-in") 
-        		|| requestURI.equals("/free/refresh-user") 
+        		|| requestURI.equals("/refresh-token") 
         		|| requestURI.equals("/free/free-ca-buy-list")
         		|| requestURI.equals("/free/free-us-buy-list")
-        		|| requestURI.equals("/free/all-companies")
-        		|| requestURI.equals("/free/searchBySymbol")
-        		|| requestURI.equals("/free/searchByName")
         		|| requestURI.equals("/sign-up") 
         		|| requestURI.equals("/all-cookies")) {
             filterChain.doFilter(request, response);

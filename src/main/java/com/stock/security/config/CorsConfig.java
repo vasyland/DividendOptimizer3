@@ -1,6 +1,7 @@
 package com.stock.security.config;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -12,26 +13,23 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 public class CorsConfig {
 	
-	@Value("${spring.security.cors}")
-	private String cors;
+//	@Value("${spring.security.cors}")
+//	private String cors;
 
 	@Bean
-	 public CorsFilter corsFilter() {
+	public CorsFilter corsFilter() {
+	    CorsConfiguration config = new CorsConfiguration();
+	    config.setAllowedOrigins(List.of("https://localhost:5004"));
+	    config.setAllowCredentials(true);
+	    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+	    config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+	    config.setExposedHeaders(List.of("Authorization"));
 
-       CorsConfiguration config = new CorsConfiguration();
-       
-//       config.setAllowedOrigins(Arrays.asList("https://localhost:5004","http://localhost:5004","http://localhost:8440","http://localhost:9080","https://localhost:9443"));
-       
-       config.addAllowedOriginPattern("*");
-       config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
-       config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
-       config.setAllowCredentials(true);
-       config.setExposedHeaders(Arrays.asList("Authorization"));
-       UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-       source.registerCorsConfiguration("/**", config);
-       
-       return new CorsFilter(source);
-   }
+	    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+	    source.registerCorsConfiguration("/**", config);
+
+	    return new CorsFilter(source);
+	}
 	
 	
 //	@Bean

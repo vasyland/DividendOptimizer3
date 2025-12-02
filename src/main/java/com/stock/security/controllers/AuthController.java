@@ -58,13 +58,13 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegistrationDto userRegistrationDto,
                                           BindingResult bindingResult, HttpServletResponse response){
 
-        log.info("[AuthController:registerUser] Signup Process Started for user:{}",userRegistrationDto.userName());
+        log.info("[AuthController:registerUser] Signup Process Started for user:{}", userRegistrationDto.userName());
 
         if (bindingResult.hasErrors()) {
             List<String> errorMessage = bindingResult.getAllErrors().stream()
                     .map(DefaultMessageSourceResolvable::getDefaultMessage)
                     .toList();
-            log.error("[AuthController:registerUser] Errors in user:{}", errorMessage);
+            log.error("[AuthController:registerUser 2] Errors in user:{}", errorMessage);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
         }
         return ResponseEntity.ok(authService.registerUser(userRegistrationDto, response));
@@ -87,22 +87,33 @@ public class AuthController {
     
     
     
+    @CrossOrigin
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshUserAccessToken(HttpServletRequest request, HttpServletResponse response) {
+        String refreshToken = "";
+        Cookie[] cookies = request.getCookies();
+
+        if (cookies != null) {
+            refreshToken = Arrays.stream(cookies)
+                    .filter(cookie -> "refresh_token".equals(cookie.getName()))
+                    .findFirst()
+                    .map(Cookie::getValue)
+                    .orElse(null);
+
+            if (refreshToken == null || refreshToken.isEmpty()) {
+                return ResponseEntity.badRequest().body("Refresh token is missing");
+            }
+
+            return ResponseEntity.ok(authService.getNewTokensFromRequestWithCookies(refreshToken, response));
+        }
+        return ResponseEntity.badRequest().body("No cookies present");
+    }
+
     
-    
-    /**
-     * Getting a new access token based on existing refresh token when refresh token present in browser
-     * It is funny that if someone has access to the computer can copy refresh token and design an app
-     * to make a call to get a new access token and vu a lja!
-     * Also, it is a good idea to generate a new refresh token too.
-     * 
-     * Security configured that a valid access token should be present, otherwise a user must to login
-     * @param request
-     * @return
-     */
 //    @PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
     @CrossOrigin
-    @GetMapping("/free/refresh-user")
-    public ResponseEntity<?> refreshUserAccessToken(HttpServletRequest request, HttpServletResponse response) {
+    @GetMapping("/refresh-token")  //refresh-token
+    public ResponseEntity<?> refreshUserAccessToken0(HttpServletRequest request, HttpServletResponse response) {
     	//AuthResponseDto
     	String refreshToken = "";
         Cookie[] cookies = request.getCookies();

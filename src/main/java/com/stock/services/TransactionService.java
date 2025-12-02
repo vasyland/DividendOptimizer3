@@ -75,7 +75,7 @@ public class TransactionService {
 
 	/**
 	 * 1. Buy transaction goes strait forward into db
-	 * 2. Sell transaction needs some calculation on average price of current hoding of the symbol in order tocalculate realized PnL.
+	 * 2. Sell transaction needs some calculation on average price of current holding of the symbol in order to calculate realized PnL.
 	 *   a. We need to take all existing Buy and Sell transactions for this symbol 
 	 *   b. to find out what is the average price 
 	 */
