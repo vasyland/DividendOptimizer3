@@ -4,6 +4,7 @@ package com.stock.security.service;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
@@ -31,6 +32,7 @@ import com.stock.security.repo.RefreshTokenRepo;
 import com.stock.security.repo.UserInfoRepository;
 import com.stock.security.util.CookieService;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -341,67 +343,87 @@ public class AuthService {
     }
 	
 	
-	/**
-	 * Generate an empty cookies and call for logout service to revoke refresh token in db
-	 * See https://dzone.com/articles/how-to-use-cookies-in-spring-boot
-	 * @param authorizationHeader
-	 * @param authorization with access token, 
-	 *        request to get current cookies
-	 *        response to send back empty cookies
-	 * @return response with empty refresh token
-	 */
-//	public Object logoutUser(String authorizationHeader, HttpServletRequest request, HttpServletResponse response) {
-//		
-//		log.info("\n\n=================== #200 AuthService.logoutUser() STARTED...");
-//		
-//		/* Find current refresh token in cookies */
-//		Cookie[] cookies = request.getCookies();
-//		String activeRefreshToken = cookieService.findCookieByName(cookies, "refresh_token");
-//      
-//		log.info(" #201 Found refresh token = " + activeRefreshToken);
-//		
-//		//TODO: Use refresh token from cookies
-//        /* Find refreshToken from database and we need a user name to generate a response with empty refresh token. */  
-//        var refreshTokenEntity = refreshTokenRepo.findByRefreshToken(activeRefreshToken)
-//                .filter(tokens-> !tokens.isRevoked())
-//                .orElseThrow(()-> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Refresh token revoked or cannot be found"));
-//
-//        UserInfo userInfoEntity = refreshTokenEntity.getUser();
-//        
-//        /* Revoke refresh token in the db  */
-//		var storedRefreshToken = refreshTokenRepo.findByRefreshToken(activeRefreshToken)
-//                .map(token->{
-//                    token.setRevoked(true);
-//                    refreshTokenRepo.save(token);
-//                    return token;
-//                })
-//                .orElse(null);
-//        
-//        /* Create the Authentication object */
-//        //Authentication authentication =  createAuthenticationObject(userInfoEntity);
-//
-//        /* Use the authentication object to generate new empty accessToken. */ 
-//        String accessToken = "LoggedOut"; // jwtTokenGenerator.generateAccessToken(authentication);
-//
-//        /* Update refresh token cookie with empty value in the response */
-//        ResponseCookie  cookie = new Cookie("refresh_token", null);
-//        cookie.setMaxAge(0);
-//        cookie.setSecure(true);
-//        cookie.setHttpOnly(true);
-//        cookie.setPath("/");
-//
-//        /* add cookie to response */
-//        response.addCookie(cookie);
-//        
-//        log.info("#203 Added");
-//        
-//        return  AuthResponseDto.builder()
-//                .accessToken(accessToken)
-//                .accessTokenExpiry(5)
-//                .userName(userInfoEntity.getUserName())
-//                .tokenType(TokenType.Bearer)
-//                .build();
-//    }
+
+	public Object logoutUser(String authorizationHeader, HttpServletRequest request, HttpServletResponse response) {
+	    log.info("\n\n=================== #200 AuthService.logoutUser() STARTED...");
+
+	    // Optional: still use refresh_token for validation if needed
+	    Cookie[] cookies = request.getCookies();
+	    if (cookies == null) {
+	        log.warn("No cookies found on logout request");
+	    }
+
+	    // List of cookie names your app uses (adjust as needed)
+	    Set<String> appCookieNames = Set.of("refresh_token", "access_token", "JSESSIONID", "XSRF-TOKEN");
+
+	    // Alternatively, delete ALL cookies (not recommended in shared environments)
+	    // But usually, you only want to delete YOUR app's cookies
+
+	    if (cookies != null) {
+	        for (Cookie cookie : cookies) {
+	            String cookieName = cookie.getName();
+
+	            // Only clear cookies your application owns
+	            if (appCookieNames.contains(cookieName)) {
+	                clearCookie(response, cookieName, cookie.getPath(), cookie.getSecure());
+	                log.info("Cleared cookie: {}", cookieName);
+	            }
+	        }
+	    }
+
+	    // Optional: still validate & revoke refresh token if you need audit/logging
+	    if (cookies != null) {
+	        String activeRefreshToken = cookieService.findCookieByName(cookies, "refresh_token");
+	        if (activeRefreshToken != null) {
+	            var refreshTokenEntity = refreshTokenRepo.findByRefreshToken(activeRefreshToken)
+	                .filter(token -> !token.isRevoked())
+	                .orElseThrow(() -> new ResponseStatusException(
+	                    HttpStatus.UNAUTHORIZED, 
+	                    "Refresh token already revoked or not found"
+	                ));
+
+	            // Revoke in DB
+	            refreshTokenEntity.setRevoked(true);
+	            refreshTokenRepo.save(refreshTokenEntity);
+
+	            UserInfo userInfo = refreshTokenEntity.getUser();
+	            log.info("[AuthService:logoutUser] User:{} Successfully logged out", userInfo.getEmailId());
+
+	            // Build response (you can keep this)
+	            return AuthResponseDto.builder()
+	                .accessToken("LoggedOut")
+	                .accessTokenExpiry(0)
+	                .id(userInfo.getId())
+	                .userName(userInfo.getEmailId())
+	                .tokenType(TokenType.Bearer)
+	                .build();
+	        }
+	    }
+
+	    // Fallback: no refresh token, but still clear cookies and return success
+	    return AuthResponseDto.builder()
+	        .accessToken("LoggedOut")
+	        .accessTokenExpiry(0)
+	        .userName("anonymous")
+	        .tokenType(TokenType.Bearer)
+	        .build();
+	}
+	
+	
+	private void clearCookie(HttpServletResponse response, String name, String path, boolean secure) {
+	    // Normalize path (if null, default to "/")
+	    String cookiePath = (path != null && !path.isEmpty()) ? path : "/";
+
+	    ResponseCookie clearedCookie = ResponseCookie.from(name, "")
+	        .httpOnly(true)         // must match original
+	        .secure(secure)         // must match original (true in prod with HTTPS)
+	        .path(cookiePath)       // must match original path
+	        .maxAge(0)              // expires immediately
+	        .sameSite("Strict")     // or "Lax" — must match original if set
+	        .build();
+
+	    response.addHeader(HttpHeaders.SET_COOKIE, clearedCookie.toString());
+	}
 	
 	
 	 private static Authentication createAuthenticationObject(UserInfo userInfoEntity) {

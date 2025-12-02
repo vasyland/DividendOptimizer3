@@ -13,16 +13,18 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.http.HttpHeaders;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import com.stock.security.dto.UserRegistrationDto;
 import com.stock.security.service.AuthService;
 import com.stock.security.service.LogoutHandlerService;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,16 +140,16 @@ public class AuthController {
     }
 
     
-    @PostMapping("/logout")
-    public void logout(HttpServletResponse response) {
-        // Create a cookie with the same name as the JWT cookie, set value to empty, and Max-Age to 0
-        Cookie cookie = new Cookie("refresh_token", null); // Replace with your cookie name
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true); // Ensure it's secure if using HTTPS
-        cookie.setPath("/");
-        cookie.setMaxAge(0); // Delete the cookie immediately
-        response.addCookie(cookie);
-    }
+//    @PostMapping("/logout")
+//    public void logout(HttpServletResponse response) {
+//        // Create a cookie with the same name as the JWT cookie, set value to empty, and Max-Age to 0
+//        Cookie cookie = new Cookie("refresh_token", null); // Replace with your cookie name
+//        cookie.setHttpOnly(true);
+//        cookie.setSecure(true); // Ensure it's secure if using HTTPS
+//        cookie.setPath("/");
+//        cookie.setMaxAge(0); // Delete the cookie immediately
+//        response.addCookie(cookie);
+//    }
     
     /**
      * Shows cookies when a request contains a valid access token
@@ -167,8 +169,6 @@ public class AuthController {
         return "No cookies";
     }
 
-}
-
 
 //@GetMapping("/sign-in")
 //public ResponseEntity<?> authenticateUser(Authentication authentication, HttpServletResponse response){
@@ -178,19 +178,24 @@ public class AuthController {
 
 
 //@PreAuthorize("hasAuthority('SCOPE_REFRESH_TOKEN')")
-//@PostMapping ("/log-out")
-//public ResponseEntity<?> getOut(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, HttpServletRequest request, HttpServletResponse response){
-//	
-//	 Cookie[] cookies = request.getCookies();
-//   if (cookies != null) {
-//       String cook =  Arrays.stream(cookies)
-//               .map(c -> c.getName() + "=" + c.getValue()).collect(Collectors.joining(", "));
-//       log.info("#1 Logout COokies: " + cook);
-//       
-//   }
-//   
-//  return ResponseEntity.ok(authService.logoutUser(authorizationHeader, request, response));
-//}
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> getOut(
+        @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+        HttpServletRequest request, 
+        HttpServletResponse response) {
+
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            String cook = Arrays.stream(cookies)
+                .map(c -> c.getName() + "=" + c.getValue())
+                .collect(Collectors.joining(", "));
+            log.info("#1 Logout Cookies: " + cook);
+        }
+        return ResponseEntity.ok(authService.logoutUser(authorizationHeader, request, response));
+    }
+    
+}
 
 
 ///**
